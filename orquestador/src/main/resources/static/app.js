@@ -47,26 +47,95 @@
 		var vacio = document.getElementById(barra.dataset.filtrar + "-vacio");
 		var estado = {};
 
+		/* Paginación opcional: <div data-paginacion="id-tabla"> con un select de tamaño y un <nav class="paginas"> */
+		var pag = document.querySelector('[data-paginacion="' + barra.dataset.filtrar + '"]');
+		var clavePagina = "pagina:" + location.pathname + ":" + barra.dataset.filtrar;
+		var tamano = 20;
+		var pagina = 1;
+		if (pag) {
+			var guardado = parseInt(leer("por-pagina"), 10);
+			var selTamano = pag.querySelector("select");
+			if (!isNaN(guardado)) { tamano = guardado; selTamano.value = String(guardado); }
+			if (selTamano.value !== String(tamano)) selTamano.value = String(tamano = 20);
+			try { pagina = parseInt(sessionStorage.getItem(clavePagina), 10) || 1; } catch (e) { pagina = 1; }
+			selTamano.addEventListener("change", function () {
+				tamano = parseInt(selTamano.value, 10) || 0;
+				guardar("por-pagina", String(tamano));
+				pagina = 1;
+				aplicar();
+			});
+			pag.hidden = false;
+		}
+
+		function irA(n, enfocar) {
+			pagina = n;
+			aplicar();
+			if (enfocar) tabla.scrollIntoView({ block: "start", behavior: "smooth" });
+		}
+
+		function botonPagina(n, texto, etiqueta) {
+			var b = document.createElement("button");
+			b.type = "button";
+			b.textContent = texto;
+			b.setAttribute("aria-label", etiqueta || "Página " + n);
+			if (n === pagina && !etiqueta) b.setAttribute("aria-current", "page");
+			b.addEventListener("click", function () { irA(n, true); });
+			return b;
+		}
+
+		function dibujarPaginas(total, paginas, desde, hasta) {
+			if (!pag) return;
+			pag.querySelector(".rango").textContent = total === 0 ? "" : (desde + 1) + "–" + hasta + " de " + total;
+			var nav = pag.querySelector(".paginas");
+			nav.textContent = "";
+			if (paginas <= 1) return;
+			if (pagina > 1) nav.appendChild(botonPagina(pagina - 1, "‹", "Página anterior"));
+			var ultima = 0;
+			for (var n = 1; n <= paginas; n++) {
+				if (n === 1 || n === paginas || Math.abs(n - pagina) <= 1) {
+					if (ultima && n - ultima > 1) {
+						var s = document.createElement("span");
+						s.className = "salto";
+						s.textContent = "…";
+						nav.appendChild(s);
+					}
+					nav.appendChild(botonPagina(n, String(n)));
+					ultima = n;
+				}
+			}
+			if (pagina < paginas) nav.appendChild(botonPagina(pagina + 1, "›", "Página siguiente"));
+		}
+
 		function aplicar() {
 			var q = buscar ? buscar.value.trim().toLowerCase() : "";
-			var visibles = 0;
+			var coinciden = [];
 			filas.forEach(function (tr) {
 				var ok = !q || (tr.dataset.texto || tr.textContent).toLowerCase().indexOf(q) >= 0;
 				Object.keys(estado).forEach(function (campo) {
 					if (ok && estado[campo] && tr.dataset[campo] !== estado[campo]) ok = false;
 				});
-				tr.hidden = !ok;
-				if (ok) visibles++;
+				tr.hidden = true;
+				if (ok) coinciden.push(tr);
 			});
-			if (contador) contador.textContent = visibles === filas.length
-				? filas.length + " hallazgos" : visibles + " de " + filas.length + " hallazgos";
-			if (vacio) vacio.hidden = visibles !== 0;
+			var total = coinciden.length;
+			var porPagina = pag && tamano > 0 ? tamano : total || 1;
+			var paginas = Math.max(1, Math.ceil(total / porPagina));
+			if (pagina > paginas) pagina = paginas;
+			if (pagina < 1) pagina = 1;
+			var desde = (pagina - 1) * porPagina;
+			var hasta = Math.min(total, desde + porPagina);
+			for (var i = desde; i < hasta; i++) coinciden[i].hidden = false;
+			try { sessionStorage.setItem(clavePagina, String(pagina)); } catch (e) { /* sin almacenamiento */ }
+			dibujarPaginas(total, paginas, desde, hasta);
+			if (contador) contador.textContent = total === filas.length
+				? filas.length + " hallazgos" : total + " de " + filas.length + " hallazgos";
+			if (vacio) vacio.hidden = total !== 0;
 		}
 
 		barra.querySelectorAll("[data-campo]").forEach(function (control) {
 			var campo = control.dataset.campo;
 			if (control.tagName === "SELECT") {
-				control.addEventListener("change", function () { estado[campo] = control.value; aplicar(); });
+				control.addEventListener("change", function () { estado[campo] = control.value; pagina = 1; aplicar(); });
 			} else {
 				control.addEventListener("click", function () {
 					var activo = control.getAttribute("aria-pressed") === "true";
@@ -77,11 +146,12 @@
 					if (valor) control.setAttribute("aria-pressed", "true");
 					else { var todos = barra.querySelector('button[data-campo="' + campo + '"][data-valor=""]'); if (todos) todos.setAttribute("aria-pressed", "true"); }
 					estado[campo] = valor;
+					pagina = 1;
 					aplicar();
 				});
 			}
 		});
-		if (buscar) buscar.addEventListener("input", aplicar);
+		if (buscar) buscar.addEventListener("input", function () { pagina = 1; aplicar(); });
 		aplicar();
 	});
 

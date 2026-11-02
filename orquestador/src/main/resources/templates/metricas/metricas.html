@@ -156,20 +156,21 @@
 		<div class="tabla-contenedor">
 		<table class="metricas">
 			<thead><tr><th>Corrida</th><th>Respuestas</th><th>Tokens entrada</th><th>Tokens salida</th>
-				<th>Coste de referencia</th><th>Latencia media</th></tr></thead>
+				<th>Coste de referencia</th><th>Coste por respuesta</th><th>Latencia media</th></tr></thead>
 			<tbody>
 			<tr th:each="u : ${inf.usos}">
 				<td th:text="${u.corrida.etiqueta}">haiku</td>
 				<td th:text="${u.respuestas}">0</td>
 				<td th:text="${#numbers.formatInteger(u.tokensEntrada, 1, 'POINT')}">0</td>
 				<td th:text="${#numbers.formatInteger(u.tokensSalida, 1, 'POINT')}">0</td>
-				<td th:text="'US$ ' + ${#numbers.formatDecimal(u.costoReferenciaUsd, 1, 4, 'COMMA')}">0</td>
+				<td th:text="'US$ ' + ${#numbers.formatDecimal(u.costoReferenciaUsd, 1, 'POINT', 2, 'COMMA')}">0</td>
+				<td th:text="${u.respuestas} > 0 ? 'US$ ' + ${#numbers.formatDecimal(u.costoReferenciaUsd / u.respuestas, 1, 3, 'COMMA')} : '—'">0</td>
 				<td th:text="${#numbers.formatDecimal(u.latenciaMediaS, 1, 1, 'COMMA')} + ' s'">0</td>
 			</tr>
 			</tbody>
 		</table>
 		</div>
-		<p class="ayuda">El coste es de referencia (precios de lista de la API): con la suscripción no se cobra.</p>
+		<p class="ayuda">El coste es de referencia (precios de lista de la API, en dólares con coma decimal: «US$ 1,41» es un dólar con 41 centavos). Con la suscripción no se cobra.</p>
 	</section>
 
 	<section class="tarjeta">

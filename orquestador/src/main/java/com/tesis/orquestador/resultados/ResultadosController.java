@@ -177,7 +177,20 @@ public class ResultadosController {
 
 	/** Consumo de una corrida G2 (para la tabla de costos de la tesis). */
 	public record Uso(long tokensEntrada, long tokensSalida, double costoReferenciaUsd, long latenciaMediaMs,
-			String modelos) {
+			String modelos, long respuestas) {
+
+		/** Coste redondeado a centavos, para leerlo como "X dólares con Y centavos". */
+		public long dolares() {
+			return Math.round(costoReferenciaUsd * 100) / 100;
+		}
+
+		public long centavos() {
+			return Math.round(costoReferenciaUsd * 100) % 100;
+		}
+
+		public double costoPorRespuesta() {
+			return respuestas == 0 ? 0 : costoReferenciaUsd / respuestas;
+		}
 
 		static Uso de(Collection<Recomendacion> recs) {
 			long entrada = recs.stream().mapToLong(r -> Objects.requireNonNullElse(r.getTokensEntrada(), 0)).sum();
@@ -188,7 +201,7 @@ public class ResultadosController {
 					.average().orElse(0);
 			String modelos = recs.stream().map(r -> Objects.requireNonNullElse(r.getModeloReal(), r.getModelo()))
 					.distinct().sorted().collect(Collectors.joining(", "));
-			return new Uso(entrada, salida, costo, latencia, modelos);
+			return new Uso(entrada, salida, costo, latencia, modelos, recs.size());
 		}
 	}
 }

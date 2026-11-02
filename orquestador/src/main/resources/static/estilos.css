@@ -710,3 +710,18 @@ h1 .regla { font-size: inherit; font-weight: 600; color: var(--texto-2); margin-
 .archivo-nombre { font-family: var(--mono); font-size: .84rem; font-weight: 500; overflow-wrap: anywhere; }
 .ruta.truncada { display: block; max-width: 260px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .barra-acciones > form { flex: 1 1 520px; }
+
+/* Paginación de tablas */
+.paginacion { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 16px; padding: 12px 20px; border-top: 1px solid var(--borde); background: var(--superficie-2); font-size: .85rem; color: var(--texto-2); }
+.paginacion .por-pagina { display: inline-flex; align-items: center; gap: 8px; }
+.paginacion select { width: auto; padding: 5px 8px; font-size: .85rem; }
+.paginacion .rango { font-variant-numeric: tabular-nums; color: var(--suave); }
+.paginas { display: inline-flex; flex-wrap: wrap; gap: 4px; }
+.paginas button {
+	min-width: 34px; padding: 5px 9px; font-size: .84rem; font-weight: 500; font-variant-numeric: tabular-nums;
+	background: var(--superficie); color: var(--texto-2); border: 1px solid var(--borde-fuerte);
+}
+.paginas button:hover { background: var(--hundido); color: var(--texto); }
+.paginas button[aria-current="page"] { background: var(--texto); color: var(--superficie); border-color: var(--texto); }
+.paginas .salto { padding: 5px 4px; color: var(--suave); }
+@media (max-width: 560px) { .paginacion { padding-inline: 16px; } }

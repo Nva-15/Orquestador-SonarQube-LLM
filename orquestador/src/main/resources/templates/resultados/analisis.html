@@ -62,9 +62,13 @@
 					<div><dt>Tokens entrada</dt><dd th:text="${#numbers.formatInteger(uso.tokensEntrada, 1, 'POINT')}">0</dd></div>
 					<div><dt>Tokens salida</dt><dd th:text="${#numbers.formatInteger(uso.tokensSalida, 1, 'POINT')}">0</dd></div>
 					<div><dt>Latencia media</dt><dd th:text="${#numbers.formatDecimal(uso.latenciaMediaMs / 1000.0, 1, 1, 'COMMA')} + ' s'">0 s</dd></div>
-					<div><dt title="Precio de lista de la API; con la suscripción no se cobra">Coste ref.*</dt><dd th:text="'US$ ' + ${#numbers.formatDecimal(uso.costoReferenciaUsd, 1, 4, 'COMMA')}">0</dd></div>
+					<div><dt title="Precio de lista de la API; con la suscripción no se cobra">Coste ref.*</dt><dd th:text="'US$ ' + ${#numbers.formatDecimal(uso.costoReferenciaUsd, 1, 'POINT', 2, 'COMMA')}">0</dd></div>
 				</dl>
-				<p class="ayuda" th:if="${uso.tokensEntrada > 0}"><small>* Coste de referencia: con la suscripción no se cobra.</small></p>
+				<p class="ayuda" th:if="${uso.tokensEntrada > 0}"><small>* Coste de referencia:
+					<strong th:text="${uso.dolares} + (${uso.dolares == 1} ? ' dólar' : ' dólares') + ' con ' + ${uso.centavos} + ' centavos'">1 dólar con 41 centavos</strong>
+					en total por <span th:text="${uso.respuestas}">0</span> respuestas
+					(≈ US$ <span th:text="${#numbers.formatDecimal(uso.costoPorRespuesta, 1, 3, 'COMMA')}">0,043</span> por hallazgo),
+					calculado con el precio de lista de la API. Con la suscripción de Claude no se cobra.</small></p>
 			</div>
 		</section>
 	</div>
@@ -172,6 +176,18 @@
 					</tbody>
 				</table>
 				<p class="sin-coincidencias" id="tabla-hallazgos-vacio" hidden>Ningún hallazgo coincide con el filtro.</p>
+			</div>
+			<div class="paginacion" data-paginacion="tabla-hallazgos" hidden>
+				<label class="por-pagina">Mostrar
+					<select aria-label="Hallazgos por página">
+						<option value="10">10</option>
+						<option value="20" selected>20</option>
+						<option value="50">50</option>
+						<option value="0">Todos</option>
+					</select>
+					por página</label>
+				<span class="rango" aria-live="polite"></span>
+				<nav class="paginas" aria-label="Páginas de hallazgos"></nav>
 			</div>
 		</th:block>
 	</section>
