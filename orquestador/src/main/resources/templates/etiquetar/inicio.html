@@ -4,45 +4,71 @@
 <body>
 <header th:replace="~{fragmentos :: menu('etiquetar')}"></header>
 <main>
-	<section class="tarjeta">
-		<h1>Etiquetar hallazgos (ciego)</h1>
-		<p class="ayuda">Decide para cada hallazgo de SonarQube si es un <strong>problema real (VP)</strong> o un
-			<strong>falso positivo (FP)</strong>. Estas etiquetas son la verdad de referencia de la tesis.
-			Para no sesgarte, aquí no se muestra la opinión de la IA ni la de otros evaluadores, y cada evaluador
-			ve los hallazgos en un orden aleatorio distinto.</p>
-		<p class="ayuda"><strong>Importante:</strong> no abras la pantalla «2. Resultados» hasta terminar de etiquetar.</p>
+	<div class="pagina-cabecera">
+		<div>
+			<span class="eyebrow"><svg class="icono s"><use href="/iconos.svg#etiqueta"/></svg>Paso 3 · Verdad de referencia</span>
+			<h1>Etiquetar hallazgos (ciego)</h1>
+			<p class="ayuda">Decide para cada hallazgo de SonarQube si es un <strong>problema real (VP)</strong> o un
+				<strong>falso positivo (FP)</strong>. Estas etiquetas son la verdad de referencia de la tesis.</p>
+		</div>
+	</div>
 
-		<div class="aviso" th:if="${aviso}" th:text="${aviso}"></div>
-		<div class="alerta" th:if="${error}" th:text="${error}"></div>
+	<th:block th:replace="~{fragmentos :: avisos}"></th:block>
 
-		<form method="post" th:action="@{/etiquetar/evaluador}" class="en-linea">
-			<label>Tu código de evaluador
-				<input name="codigo" required maxlength="40" th:value="${evaluador}" placeholder="E1, E2… o tu nombre">
-			</label>
-			<button type="submit" th:text="${evaluador} ? 'Cambiar' : 'Empezar'">Empezar</button>
-		</form>
-		<p th:if="${evaluador}" class="ayuda">Etiquetando como <strong th:text="${evaluador}">E1</strong>.</p>
-	</section>
+	<div class="rejilla-2">
+		<section class="tarjeta">
+			<div class="titulo"><h2 th:text="${evaluador} ? 'Evaluador' : 'Identifícate para empezar'">Identifícate</h2></div>
+			<div class="identidad" th:if="${evaluador}">
+				<span class="avatar" th:text="${#strings.toUpperCase(#strings.substring(evaluador, 0, 1))}">E</span>
+				<div><strong th:text="${evaluador}">E1</strong><br><span class="ayuda"><small>Tus etiquetas se guardan con este código.</small></span></div>
+			</div>
+			<form method="post" th:action="@{/etiquetar/evaluador}" class="en-linea">
+				<label class="campo" for="codigo"><span th:text="${evaluador} ? 'Cambiar de evaluador' : 'Tu código de evaluador'">Tu código de evaluador</span>
+					<input id="codigo" name="codigo" required maxlength="40" th:value="${evaluador}" placeholder="E1, E2… o tu nombre" autocomplete="off">
+				</label>
+				<button type="submit" th:class="${evaluador} ? 'secundario' : 'primario'" th:text="${evaluador} ? 'Cambiar' : 'Empezar'">Empezar</button>
+			</form>
+		</section>
 
-	<section class="tarjeta" th:if="${evaluador}">
-		<h2>Análisis disponibles</h2>
-		<p th:if="${#lists.isEmpty(analisis)}" class="ayuda">No hay análisis con hallazgos.</p>
-		<table th:unless="${#lists.isEmpty(analisis)}">
-			<thead><tr><th>Proyecto</th><th>Tu progreso</th><th></th><th>Ficha de registro</th></tr></thead>
-			<tbody>
-			<tr th:each="a : ${analisis}" th:with="n=${hechas[a.id]}">
-				<td th:text="${a.projectKey}">clave</td>
-				<td style="min-width: 220px">
-					<div class="barra"><div th:style="'width:' + ${n * 100 / a.totalHallazgos} + '%'"></div></div>
-					<small th:text="${n} + ' de ' + ${a.totalHallazgos} + ' etiquetados'">0 de 0</small>
-				</td>
-				<td><a th:href="@{/etiquetar/{id}(id=${a.id})}"
-					   th:text="${n == 0} ? 'Empezar' : (${n < a.totalHallazgos} ? 'Continuar' : 'Revisar')">Empezar</a></td>
-				<td><a th:href="@{/etiquetar/{id}/ficha.csv(id=${a.id})}">Descargar CSV</a>
-					<small class="ayuda">(todos los evaluadores)</small></td>
-			</tr>
-			</tbody>
-		</table>
+		<section class="tarjeta plana">
+			<div class="titulo"><h2>Cómo se evita el sesgo</h2></div>
+			<ul class="reglas-ciego">
+				<li><span class="icono-caja"><svg class="icono"><use href="/iconos.svg#ojo-tachado"/></svg></span>
+					<span><b>No ves la opinión de la IA</b>ni la de otros evaluadores.</span></li>
+				<li><span class="icono-caja"><svg class="icono"><use href="/iconos.svg#aleatorio"/></svg></span>
+					<span><b>Orden aleatorio propio</b>cada evaluador recorre los hallazgos en un orden distinto y reproducible.</span></li>
+				<li><span class="icono-caja"><svg class="icono"><use href="/iconos.svg#alerta"/></svg></span>
+					<span><b>No abras «2. Resultados»</b>hasta terminar de etiquetar.</span></li>
+			</ul>
+		</section>
+	</div>
+
+	<section class="tarjeta sin-relleno" th:if="${evaluador}">
+		<div class="titulo"><h2>Análisis disponibles</h2></div>
+		<div class="vacio" th:if="${#lists.isEmpty(analisis)}">
+			<svg class="icono"><use href="/iconos.svg#bandeja"/></svg>
+			<strong>No hay análisis con hallazgos</strong>
+			<span>Cuando un análisis termine podrás etiquetarlo aquí.</span>
+		</div>
+		<div class="tabla-contenedor" th:unless="${#lists.isEmpty(analisis)}">
+			<table>
+				<thead><tr><th>Proyecto</th><th>Tu progreso</th><th></th><th>Ficha de registro</th></tr></thead>
+				<tbody>
+				<tr th:each="a : ${analisis}" th:with="n=${hechas[a.id]}">
+					<td><strong th:text="${a.projectKey}">clave</strong><span class="secundaria" th:text="'#' + ${a.id} + ' · ' + ${a.totalHallazgos} + ' hallazgos'">#1</span></td>
+					<td class="celda-progreso">
+						<div class="barra"><div th:style="'width:' + ${n * 100 / a.totalHallazgos} + '%'"></div></div>
+						<small class="ayuda" th:text="${n} + ' de ' + ${a.totalHallazgos} + ' etiquetados'">0 de 0</small>
+					</td>
+					<td><a class="boton pequeno" th:classappend="${n < a.totalHallazgos} ? 'primario' : 'secundario'" th:href="@{/etiquetar/{id}(id=${a.id})}"
+						   th:text="${n == 0} ? 'Empezar' : (${n < a.totalHallazgos} ? 'Continuar' : 'Revisar')">Empezar</a></td>
+					<td><a class="boton fantasma pequeno" th:href="@{/etiquetar/{id}/ficha.csv(id=${a.id})}">
+						<svg class="icono s"><use href="/iconos.svg#descargar"/></svg>CSV</a>
+						<span class="secundaria">todos los evaluadores</span></td>
+				</tr>
+				</tbody>
+			</table>
+		</div>
 	</section>
 </main>
 </body>

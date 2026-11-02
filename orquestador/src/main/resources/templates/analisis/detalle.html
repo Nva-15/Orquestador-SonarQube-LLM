@@ -3,37 +3,76 @@
 <head th:replace="~{fragmentos :: head('Análisis ' + ${a.projectKey}, ${a.estado.enCurso()})}"></head>
 <body>
 <header th:replace="~{fragmentos :: menu('analisis')}"></header>
-<main>
-	<section class="tarjeta">
-		<p><a th:href="@{/analisis}">← Volver</a></p>
-		<h1>Análisis #<span th:text="${a.id}">1</span>: <span th:text="${a.projectKey}">clave</span></h1>
+<main th:with="estadoTexto=${#strings.capitalize(#strings.toLowerCase(#strings.replace(a.estado.name(), '_', ' ')))}">
+	<nav class="miga" aria-label="Ruta">
+		<a th:href="@{/analisis}"><svg class="icono s"><use href="/iconos.svg#volver"/></svg>Análisis</a>
+		<span>/</span><span th:text="'#' + ${a.id}">#1</span>
+	</nav>
 
-		<ol class="etapas">
+	<div class="pagina-cabecera">
+		<div>
+			<span class="eyebrow" th:text="'Análisis #' + ${a.id}">Análisis #1</span>
+			<h1 th:text="${a.projectKey}">clave</h1>
+			<div class="meta">
+				<span><span class="estado" th:classappend="${a.estado.name()} + (${a.estado.enCurso()} ? ' en-curso' : '')" th:text="${estadoTexto}">Estado</span></span>
+				<span class="ruta"><svg class="icono s"><use href="/iconos.svg#git"/></svg><span th:text="${a.origen}">ruta</span></span>
+			</div>
+		</div>
+		<div class="acciones">
+			<a class="boton secundario" th:href="${sonarUrl} + '/dashboard?id=' + ${a.projectKey}" target="_blank" rel="noopener">
+				<svg class="icono"><use href="/iconos.svg#externo"/></svg>Abrir en SonarQube</a>
+			<a class="boton primario" th:if="${a.estado.name() == 'COMPLETADO'}" th:href="@{/resultados/{id}(id=${a.id})}">
+				Ver resultados<svg class="icono"><use href="/iconos.svg#derecha"/></svg></a>
+		</div>
+	</div>
+
+	<section class="tarjeta">
+		<ol class="etapas" aria-label="Etapas del análisis">
 			<li th:each="e : ${etapas}"
-				th:text="${e}"
-				th:classappend="${e == a.estado} ? 'actual' : (${e.ordinal() < a.estado.ordinal() and a.estado.name() != 'ERROR'} ? 'hecha')">
-				ETAPA
+				th:text="${#strings.capitalize(#strings.toLowerCase(#strings.replace(e.name(), '_', ' ')))}"
+				th:classappend="${e == a.estado} ? ('actual ' + ${a.estado.name()} + (${a.estado.enCurso()} ? ' en-curso' : '')) : (${e.ordinal() < a.estado.ordinal() and a.estado.name() != 'ERROR'} ? 'hecha')"
+				th:attr="aria-current=${e == a.estado} ? 'step'">
+				Etapa
 			</li>
 		</ol>
-		<div class="alerta" th:if="${a.estado.name() == 'ERROR'}">El análisis terminó con error; revisa el registro.</div>
-
-		<dl class="datos">
-			<dt>Origen</dt><dd th:text="${a.origen}">ruta</dd>
-			<dt>Estado</dt><dd><span class="estado" th:classappend="${a.estado.name()}" th:text="${a.estado}">ESTADO</span></dd>
-			<dt>Build</dt><dd th:text="${a.tipoBuild} ?: '—'">maven</dd>
-			<dt>Perfil de reglas</dt><dd th:text="${a.perfilReglas} ?: '—'">Tesis Java</dd>
-			<dt>Hallazgos abiertos</dt><dd th:text="${a.totalHallazgos} ?: '—'">0</dd>
-			<dt>Inicio / fin</dt>
-			<dd><span th:text="${#temporals.format(a.creado, 'dd/MM/yyyy HH:mm:ss')}">inicio</span>
-				<span th:if="${a.finalizado}"> → <span th:text="${#temporals.format(a.finalizado, 'HH:mm:ss')}">fin</span></span></dd>
-			<dt>En SonarQube</dt>
-			<dd><a th:href="${sonarUrl} + '/dashboard?id=' + ${a.projectKey}" target="_blank">Abrir el proyecto ↗</a></dd>
-		</dl>
+		<div class="alerta" th:if="${a.estado.name() == 'ERROR'}" role="alert">
+			<svg class="icono"><use href="/iconos.svg#alerta"/></svg>
+			<span>El análisis terminó con error. Revisa el registro para ver en qué etapa falló.</span>
+		</div>
+		<p class="ayuda" th:if="${a.estado.enCurso()}"><small>Esta página se actualiza sola cada 3 segundos.</small></p>
 	</section>
 
+	<div class="kpis">
+		<div class="kpi">
+			<span class="rotulo"><svg class="icono s"><use href="/iconos.svg#capas"/></svg>Hallazgos abiertos</span>
+			<span class="cifra" th:text="${a.totalHallazgos} ?: '—'">0</span>
+		</div>
+		<div class="kpi">
+			<span class="rotulo"><svg class="icono s"><use href="/iconos.svg#terminal"/></svg>Build</span>
+			<span class="cifra media" th:text="${a.tipoBuild} ?: '—'">maven</span>
+		</div>
+		<div class="kpi">
+			<span class="rotulo"><svg class="icono s"><use href="/iconos.svg#escudo"/></svg>Perfil de reglas</span>
+			<span class="cifra media" th:text="${a.perfilReglas} ?: '—'">Tesis Java</span>
+		</div>
+		<div class="kpi">
+			<span class="rotulo"><svg class="icono s"><use href="/iconos.svg#reloj"/></svg>Inicio → fin</span>
+			<span class="cifra media">
+				<span th:text="${#temporals.format(a.creado, 'HH:mm:ss')}">10:00</span><span th:if="${a.finalizado}"
+					th:text="' → ' + ${#temporals.format(a.finalizado, 'HH:mm:ss')}"> → 10:05</span></span>
+			<span class="ayuda" th:text="${#temporals.format(a.creado, 'dd/MM/yyyy')}">fecha</span>
+		</div>
+	</div>
+
 	<section class="tarjeta">
-		<h2>Registro</h2>
-		<pre class="log" th:text="${a.log}">log</pre>
+		<div class="titulo">
+			<h2><svg class="icono"><use href="/iconos.svg#terminal"/></svg>Registro</h2>
+			<button type="button" class="boton-copiar" data-copiar="registro">Copiar registro</button>
+		</div>
+		<div class="terminal">
+			<div class="terminal-barra"><i></i><i></i><i></i><span th:text="${a.projectKey} + '.log'">log</span></div>
+			<pre class="log" id="registro" data-al-final th:text="${a.log}">log</pre>
+		</div>
 	</section>
 </main>
 </body>

@@ -5,85 +5,102 @@
 <header th:replace="~{fragmentos :: menu('etiquetar')}"></header>
 <main class="ancho">
 	<div class="navegacion">
-		<a th:href="@{/etiquetar}">← Etiquetar</a>
-		<span class="ayuda"><strong th:text="${a.projectKey}">clave</strong> · evaluador
-			<strong th:text="${evaluador}">E1</strong> · hallazgo <span th:text="${posicion}">1</span> de
-			<span th:text="${total}">1</span> · <span th:text="${hechas.size()}">0</span> etiquetados</span>
-	</div>
-	<div class="barra"><div th:style="'width:' + ${hechas.size() * 100 / total} + '%'"></div></div>
-
-	<div class="aviso" th:if="${aviso}" th:text="${aviso}"></div>
-	<div class="alerta" th:if="${error}" th:text="${error}"></div>
-
-	<div class="comparacion etiquetado">
-		<section class="tarjeta g1">
-			<p class="grupo">Hallazgo de SonarQube</p>
-			<h1 th:text="${h.regla}">java:S1</h1>
-			<p class="ayuda" th:text="${h.reglaNombre}">Nombre de la regla</p>
-			<dl class="datos">
-				<dt>Tipo</dt><dd th:text="${h.tipo}">BUG</dd>
-				<dt>Severidad</dt><dd th:text="${h.severidad}">MAJOR</dd>
-				<dt>Archivo</dt><dd><span th:text="${h.archivo}">archivo</span>
-					<small th:if="${h.esTest}" class="etiqueta-test">test</small></dd>
-				<dt>Línea</dt><dd th:text="${h.lineaInicio} ?: '—'">1</dd>
-			</dl>
-			<h2>Mensaje</h2>
-			<p class="mensaje" th:text="${h.mensaje}">mensaje</p>
-			<details>
-				<summary>Descripción de la regla</summary>
-				<pre class="texto" th:text="${h.reglaDescripcion}">descripción</pre>
-			</details>
-		</section>
-
-		<section class="tarjeta decision">
-			<p class="grupo">Tu valoración</p>
-			<form method="post" th:action="@{/etiquetar/{a}/{h}(a=${a.id},h=${h.id})}">
-				<div class="opciones">
-					<label th:each="c : ${condiciones}" class="opcion" th:classappend="${c.name()}">
-						<input type="radio" name="condicion" th:value="${c.name()}" required
-							   th:checked="${etiqueta != null and etiqueta.condicion == c}">
-						<span th:text="${c.etiqueta}">VP</span>
-					</label>
-				</div>
-				<label class="obs">Observaciones <small>(opcional: por qué, o si dudas)</small>
-					<textarea name="observaciones" rows="4" th:text="${etiqueta?.observaciones}"></textarea>
-				</label>
-				<button type="submit">Guardar y siguiente</button>
-				<p class="ayuda" th:if="${etiqueta}">Ya lo etiquetaste el
-					<span th:text="${#temporals.format(etiqueta.fecha, 'dd/MM HH:mm')}">fecha</span>; puedes cambiarlo.</p>
-			</form>
-		</section>
-	</div>
-
-	<section class="tarjeta">
-		<h2>Código</h2>
-		<p class="ayuda" th:text="${h.contextoDescripcion} ?: 'Sin contexto'">método</p>
-		<div class="codigo" th:unless="${#lists.isEmpty(h.lineas())}">
-			<div th:each="l : ${h.lineas()}" class="linea" th:classappend="${l.marcada} ? 'marcada'"><span
-					class="num" th:text="${l.numero}">1</span><span class="txt" th:text="${l.texto}">código</span></div>
+		<nav class="miga" aria-label="Ruta">
+			<a th:href="@{/etiquetar}"><svg class="icono s"><use href="/iconos.svg#volver"/></svg>Etiquetar</a>
+			<span>/</span><span th:text="${a.projectKey}">clave</span>
+		</nav>
+		<div class="meta">
+			<span><svg class="icono s"><use href="/iconos.svg#usuario"/></svg><strong th:text="${evaluador}">E1</strong></span>
+			<span>Hallazgo <strong class="num-tab" th:text="${posicion} + ' de ' + ${total}">1 de 1</strong></span>
+			<span><strong class="num-tab" th:text="${hechas.size()}">0</strong>&nbsp;etiquetados</span>
 		</div>
-		<details th:unless="${#lists.isEmpty(archivo)}">
-			<summary>Ver el archivo completo (<span th:text="${#lists.size(archivo)}">0</span> líneas)</summary>
-			<div class="codigo archivo">
-				<div th:each="l : ${archivo}" class="linea" th:classappend="${l.marcada} ? 'marcada'"><span
-						class="num" th:text="${l.numero}">1</span><span class="txt" th:text="${l.texto}">código</span></div>
-			</div>
-		</details>
-	</section>
+	</div>
+	<div class="barra" role="progressbar" th:aria-valuenow="${hechas.size()}" aria-valuemin="0" th:aria-valuemax="${total}">
+		<div th:style="'width:' + ${hechas.size() * 100 / total} + '%'"></div></div>
 
-	<section class="tarjeta">
-		<details>
-			<summary>Todos los hallazgos (en tu orden)</summary>
-			<ol class="lista-orden">
-				<li th:each="x : ${orden}" th:classappend="${x.id == h.id} ? 'actual'">
-					<a th:href="@{/etiquetar/{a}/{h}(a=${a.id},h=${x.id})}">
-						<span th:text="${x.regla}">regla</span> · <span th:text="${x.archivo}">archivo</span>:<span th:text="${x.lineaInicio}">1</span>
-					</a>
-					<span th:if="${hechas[x.id]}" class="si">✓</span>
-				</li>
-			</ol>
-		</details>
-	</section>
+	<th:block th:replace="~{fragmentos :: avisos}"></th:block>
+
+	<div class="mesa">
+		<div class="columna">
+			<section class="tarjeta neutra">
+				<div class="grupo-banda"><span>Hallazgo de SonarQube</span><span class="regla" th:text="${h.regla}">java:S1</span></div>
+				<div class="ficha-hallazgo">
+					<h2 th:text="${h.reglaNombre}">Nombre de la regla</h2>
+					<div class="chips">
+						<th:block th:replace="~{fragmentos :: chips(${h})}"></th:block>
+						<span class="ruta"><svg class="icono s"><use href="/iconos.svg#archivo"/></svg><span
+								th:text="${h.archivo} + ':' + (${h.lineaInicio} ?: '—')">archivo:1</span></span>
+					</div>
+				</div>
+				<div class="seccion">
+					<h3>Mensaje</h3>
+					<p class="mensaje cita" th:text="${h.mensaje}">mensaje</p>
+				</div>
+				<details class="plegable">
+					<summary>Descripción de la regla</summary>
+					<pre class="texto" th:text="${h.reglaDescripcion}">descripción</pre>
+				</details>
+			</section>
+
+			<section class="tarjeta">
+				<div class="titulo">
+					<h2><svg class="icono"><use href="/iconos.svg#codigo"/></svg>Código</h2>
+					<span class="ayuda"><small th:text="${h.contextoDescripcion} ?: 'Sin contexto'">método</small></span>
+				</div>
+				<th:block th:unless="${#lists.isEmpty(h.lineas())}"><div th:replace="~{fragmentos :: lineas(${h.lineas()})}"></div></th:block>
+				<details class="plegable" th:unless="${#lists.isEmpty(archivo)}" data-centrar>
+					<summary>Ver el archivo completo (<span th:text="${#lists.size(archivo)}">0</span> líneas)</summary>
+					<div class="codigo archivo">
+						<div th:each="l : ${archivo}" class="linea" th:classappend="${l.marcada} ? 'marcada'"><span
+								class="num" th:text="${l.numero}">1</span><span class="txt" th:text="${l.texto}">código</span></div>
+					</div>
+				</details>
+			</section>
+		</div>
+
+		<div class="columna panel-fijo">
+			<section class="tarjeta decision">
+				<div class="titulo"><h2>Tu valoración</h2></div>
+				<form method="post" th:action="@{/etiquetar/{a}/{h}(a=${a.id},h=${h.id})}" class="formulario" data-principal>
+					<div class="opciones" role="radiogroup" aria-label="Condición del hallazgo">
+						<label th:each="c : ${condiciones}" class="opcion" th:classappend="${c.name()}">
+							<input type="radio" name="condicion" th:value="${c.name()}" required
+								   th:checked="${etiqueta != null and etiqueta.condicion == c}"
+								   th:data-atajo="${c.name() == 'VERDADERO_POSITIVO'} ? 'v' : 'f'">
+							<span><span th:text="${c.etiqueta}">VP</span>
+								<span class="desc" th:text="${c.name() == 'VERDADERO_POSITIVO'} ? 'El código tiene el problema que indica la regla.' : 'La regla no aplica aquí o el código es correcto.'">desc</span></span>
+							<kbd th:text="${c.name() == 'VERDADERO_POSITIVO'} ? 'V' : 'F'">V</kbd>
+						</label>
+					</div>
+					<label class="campo" for="observaciones"><span>Observaciones <small>(opcional: por qué, o si dudas)</small></span>
+						<textarea id="observaciones" name="observaciones" rows="4" th:text="${etiqueta?.observaciones}"></textarea>
+					</label>
+					<button type="submit" class="primario">Guardar y siguiente<svg class="icono"><use href="/iconos.svg#derecha"/></svg></button>
+					<p class="exito" th:if="${etiqueta}"><svg class="icono s"><use href="/iconos.svg#check"/></svg>
+						<span>Ya lo etiquetaste el <span th:text="${#temporals.format(etiqueta.fecha, 'dd/MM HH:mm')}">fecha</span>; puedes cambiarlo.</span></p>
+					<div class="atajos">
+						<span><kbd>V</kbd>/<kbd>F</kbd> elegir</span>
+						<span><kbd>Ctrl</kbd>+<kbd>Enter</kbd> guardar</span>
+					</div>
+				</form>
+			</section>
+
+			<section class="tarjeta">
+				<div class="titulo">
+					<h2>Tu recorrido</h2>
+					<span class="ayuda"><small>en tu orden aleatorio</small></span>
+				</div>
+				<nav class="mapa" aria-label="Todos los hallazgos">
+					<a th:each="x, s : ${orden}" th:href="@{/etiquetar/{a}/{h}(a=${a.id},h=${x.id})}"
+					   th:classappend="(${hechas[x.id]} ? 'hecho ' : '') + (${x.id == h.id} ? 'actual' : '')"
+					   th:title="${s.count} + '. ' + ${x.regla} + ' · ' + ${x.archivo} + ':' + ${x.lineaInicio} + (${hechas[x.id]} ? ' (etiquetado)' : '')"
+					   th:text="${s.count}" th:attr="aria-current=${x.id == h.id} ? 'step'">1</a>
+				</nav>
+				<div class="atajos"><span><i class="punto-serie hecho"></i>etiquetado</span>
+					<span><i class="punto-serie pendiente"></i>pendiente</span></div>
+			</section>
+		</div>
+	</div>
 </main>
 </body>
 </html>

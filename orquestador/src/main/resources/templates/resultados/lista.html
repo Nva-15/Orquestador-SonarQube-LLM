@@ -4,27 +4,41 @@
 <body>
 <header th:replace="~{fragmentos :: menu('resultados')}"></header>
 <main>
-	<section class="tarjeta">
-		<h1>Resultados G1 vs G2</h1>
-		<p class="ayuda">Elige un análisis para ver sus hallazgos: lo que reporta SonarQube (G1) y la interpretación
-			y recomendación del LLM (G2).</p>
-		<p th:if="${#lists.isEmpty(analisis)}" class="ayuda">No hay análisis completados.
-			<a th:href="@{/analisis}">Lanza uno</a>.</p>
-		<table th:unless="${#lists.isEmpty(analisis)}">
-			<thead>
-			<tr><th>#</th><th>Proyecto</th><th>Origen</th><th>Hallazgos</th><th>Fecha</th></tr>
-			</thead>
-			<tbody>
-			<tr th:each="a : ${analisis}">
-				<td th:text="${a.id}">1</td>
-				<td><a th:href="@{/resultados/{id}(id=${a.id})}" th:text="${a.projectKey}">clave</a></td>
-				<td class="origen" th:text="${a.origen}">ruta</td>
-				<td th:text="${a.totalHallazgos} ?: '—'">0</td>
-				<td th:text="${#temporals.format(a.creado, 'dd/MM/yyyy HH:mm')}">fecha</td>
-			</tr>
-			</tbody>
-		</table>
+	<div class="pagina-cabecera">
+		<div>
+			<span class="eyebrow"><svg class="icono s"><use href="/iconos.svg#columnas"/></svg>Paso 2 · Interpretación con IA</span>
+			<h1>Resultados G1 vs G2</h1>
+			<p class="ayuda">Elige un análisis para ver lo que reporta SonarQube (G1) junto a la interpretación y la
+				recomendación del LLM (G2) para cada hallazgo.</p>
+		</div>
+	</div>
+
+	<section class="tarjeta" th:if="${#lists.isEmpty(analisis)}">
+		<div class="vacio">
+			<svg class="icono"><use href="/iconos.svg#bandeja"/></svg>
+			<strong>No hay análisis completados</strong>
+			<span>Cuando un análisis termine aparecerá aquí.</span>
+			<a class="boton primario" th:href="@{/analisis}">Lanzar un análisis</a>
+		</div>
 	</section>
+
+	<div class="lista-tarjetas" th:unless="${#lists.isEmpty(analisis)}">
+		<a class="tarjeta-enlace" th:each="a : ${analisis}" th:href="@{/resultados/{id}(id=${a.id})}">
+			<div class="fila">
+				<h3 th:text="${a.projectKey}">clave</h3>
+				<span class="ayuda"><small th:text="'#' + ${a.id}">#1</small></span>
+			</div>
+			<span class="ruta" th:text="${a.origen}" th:title="${a.origen}">ruta</span>
+			<div>
+				<span class="cifra" th:text="${a.totalHallazgos} ?: '—'">0</span>
+				<span class="ayuda"> hallazgos</span>
+			</div>
+			<div class="pie">
+				<span th:text="${#temporals.format(a.creado, 'dd/MM/yyyy HH:mm')}">fecha</span>
+				<span class="ir">Abrir<svg class="icono s"><use href="/iconos.svg#derecha"/></svg></span>
+			</div>
+		</a>
+	</div>
 </main>
 </body>
 </html>

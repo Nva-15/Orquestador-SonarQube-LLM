@@ -4,82 +4,115 @@
 <body>
 <header th:replace="~{fragmentos :: menu('likert')}"></header>
 <main>
-	<section class="tarjeta">
-		<h1>Cuestionario de utilidad percibida</h1>
-		<p class="ayuda">Verás hallazgos de análisis de código Java junto a una recomendación para resolverlos.
-			Valora cada recomendación del 1 (muy en desacuerdo) al 5 (muy de acuerdo) en claridad, pertinencia y
-			accionabilidad. No hay respuestas correctas: nos interesa tu opinión como desarrollador.</p>
+	<div class="pagina-cabecera">
+		<div>
+			<span class="eyebrow"><svg class="icono s"><use href="/iconos.svg#encuesta"/></svg>Paso 4 · Utilidad percibida</span>
+			<h1>Cuestionario de utilidad percibida</h1>
+			<p class="ayuda">Verás hallazgos de análisis de código Java junto a una recomendación para resolverlos.
+				Valora cada recomendación del 1 (muy en desacuerdo) al 5 (muy de acuerdo) en claridad, pertinencia y
+				accionabilidad. No hay respuestas correctas: nos interesa tu opinión como desarrollador.</p>
+		</div>
+	</div>
 
-		<div class="aviso" th:if="${aviso}" th:text="${aviso}"></div>
-		<div class="alerta" th:if="${error}" th:text="${error}"></div>
+	<th:block th:replace="~{fragmentos :: avisos}"></th:block>
 
-		<form method="post" th:action="@{/likert/participante}" class="formulario">
-			<label>Tu código de participante
-				<input name="codigo" required maxlength="40" th:value="${codigo}" placeholder="P1, P2… o tu nombre">
-			</label>
-			<label>Experiencia con Java
-				<select name="experiencia" required>
-					<option value="">Elige…</option>
-					<option th:each="e : ${experiencias}" th:value="${e}" th:text="${e}"
-							th:selected="${participante != null and participante.experiencia == e}">rango</option>
-				</select>
-			</label>
-			<button type="submit" th:text="${participante} ? 'Actualizar' : 'Empezar'">Empezar</button>
-		</form>
-		<p th:if="${participante}" class="ayuda">Respondiendo como <strong th:text="${participante.codigo}">P1</strong>.</p>
-	</section>
+	<div class="rejilla-2">
+		<section class="tarjeta">
+			<div class="titulo"><h2 th:text="${participante} ? 'Participante' : 'Antes de empezar'">Antes de empezar</h2></div>
+			<div class="identidad" th:if="${participante}">
+				<span class="avatar" th:text="${#strings.toUpperCase(#strings.substring(participante.codigo, 0, 1))}">P</span>
+				<div><strong th:text="${participante.codigo}">P1</strong><br>
+					<span class="ayuda"><small th:text="'Experiencia con Java: ' + ${participante.experiencia}">exp</small></span></div>
+			</div>
+			<form method="post" th:action="@{/likert/participante}" class="formulario">
+				<label class="campo" for="codigo">Tu código de participante
+					<input id="codigo" name="codigo" required maxlength="40" th:value="${codigo}" placeholder="P1, P2… o tu nombre" autocomplete="off">
+				</label>
+				<label class="campo" for="experiencia">Experiencia con Java
+					<select id="experiencia" name="experiencia" required>
+						<option value="">Elige…</option>
+						<option th:each="e : ${experiencias}" th:value="${e}" th:text="${e}"
+								th:selected="${participante != null and participante.experiencia == e}">rango</option>
+					</select>
+				</label>
+				<div><button type="submit" th:class="${participante} ? 'secundario' : 'primario'" th:text="${participante} ? 'Actualizar datos' : 'Empezar'">Empezar</button></div>
+			</form>
+		</section>
 
-	<section class="tarjeta" th:if="${participante}">
-		<h2>Cuestionarios</h2>
-		<p th:if="${#lists.isEmpty(cuestionarios)}" class="ayuda">Todavía no hay cuestionarios.</p>
-		<table th:unless="${#lists.isEmpty(cuestionarios)}">
-			<thead><tr><th>#</th><th>Tu progreso</th><th></th></tr></thead>
-			<tbody>
-			<tr th:each="c : ${cuestionarios}" th:with="n=${hechas[c.id]}, t=${totales[c.id]}">
-				<td th:text="'Cuestionario ' + ${c.id}">1</td>
-				<td style="min-width: 220px">
-					<div class="barra"><div th:style="'width:' + (${t} > 0 ? ${n * 100 / t} : 0) + '%'"></div></div>
-					<small th:text="${n} + ' de ' + ${t} + ' respondidos'">0 de 0</small>
-				</td>
-				<td><a th:href="@{/likert/{id}(id=${c.id})}" th:if="${n < t}"
-					   th:text="${n == 0} ? 'Empezar' : 'Continuar'">Empezar</a>
-					<span th:if="${n >= t}" class="si">✓ Completado</span></td>
-			</tr>
-			</tbody>
-		</table>
+		<section class="tarjeta plana">
+			<div class="titulo"><h2>Qué vas a valorar</h2></div>
+			<ul class="reglas-ciego">
+				<li><span class="icono-caja"><b>1</b></span><span><b>Claridad</b>¿Se entiende la recomendación?</span></li>
+				<li><span class="icono-caja"><b>2</b></span><span><b>Pertinencia</b>¿Encaja con este código concreto?</span></li>
+				<li><span class="icono-caja"><b>3</b></span><span><b>Accionabilidad</b>¿Sabrías qué hacer con ella?</span></li>
+			</ul>
+			<p class="ayuda"><small>Cada pregunta toma 1–2 minutos. Puedes dejarlo y continuar después con el mismo código.</small></p>
+		</section>
+	</div>
+
+	<section class="tarjeta sin-relleno" th:if="${participante}">
+		<div class="titulo"><h2>Tus cuestionarios</h2></div>
+		<div class="vacio" th:if="${#lists.isEmpty(cuestionarios)}">
+			<svg class="icono"><use href="/iconos.svg#encuesta"/></svg>
+			<strong>Todavía no hay cuestionarios</strong>
+			<span>El investigador debe crear uno.</span>
+		</div>
+		<div class="tabla-contenedor" th:unless="${#lists.isEmpty(cuestionarios)}">
+			<table>
+				<thead><tr><th>Cuestionario</th><th>Tu progreso</th><th></th></tr></thead>
+				<tbody>
+				<tr th:each="c : ${cuestionarios}" th:with="n=${hechas[c.id]}, t=${totales[c.id]}">
+					<td><strong th:text="'Cuestionario ' + ${c.id}">Cuestionario 1</strong><span class="secundaria" th:text="${t} + ' preguntas'">0</span></td>
+					<td class="celda-progreso">
+						<div class="barra"><div th:style="'width:' + (${t} > 0 ? ${n * 100 / t} : 0) + '%'"></div></div>
+						<small class="ayuda" th:text="${n} + ' de ' + ${t} + ' respondidos'">0 de 0</small>
+					</td>
+					<td><a class="boton primario pequeno" th:href="@{/likert/{id}(id=${c.id})}" th:if="${n < t}"
+						   th:text="${n == 0} ? 'Empezar' : 'Continuar'">Empezar</a>
+						<span th:if="${n >= t}" class="si"><svg class="icono s"><use href="/iconos.svg#check"/></svg>Completado</span></td>
+				</tr>
+				</tbody>
+			</table>
+		</div>
 	</section>
 
 	<section class="tarjeta">
 		<details>
 			<summary>Para el investigador: crear cuestionarios y descargar respuestas</summary>
-			<p class="ayuda">Se toma una muestra aleatoria de hallazgos con respuesta en la corrida elegida. Cada
-				participante ve la mitad con la recomendación de SonarQube (G1) y la otra mitad con la del LLM (G2), sin
-				saber cuál es cuál; la asignación cambia entre participantes.</p>
-			<form method="post" th:action="@{/likert/cuestionarios}" class="en-linea" th:unless="${#lists.isEmpty(opciones)}">
-				<label>Análisis y corrida G2
-					<select name="opcion" required>
-						<option th:each="o : ${opciones}" th:value="${o[0]}" th:text="${o[1]}">repo · haiku</option>
-					</select>
-				</label>
-				<label>Hallazgos
-					<input name="tamano" type="number" min="2" max="60" value="10" style="width: 90px">
-				</label>
-				<button type="submit">Crear cuestionario</button>
-			</form>
-			<p th:if="${#lists.isEmpty(opciones)}" class="ayuda">Primero interpreta hallazgos con IA en la pantalla 2.</p>
-			<table th:unless="${#lists.isEmpty(cuestionarios)}">
-				<thead><tr><th>#</th><th>Repositorio</th><th>Corrida G2</th><th>Hallazgos</th><th>Creado</th><th>Respuestas</th></tr></thead>
-				<tbody>
-				<tr th:each="c : ${cuestionarios}">
-					<td th:text="${c.id}">1</td>
-					<td th:text="${analisisPorId[c.analisisId]?.projectKey}">repo</td>
-					<td th:text="${c.etiquetaCorrida}">haiku</td>
-					<td th:text="${totales[c.id]}">0</td>
-					<td th:text="${#temporals.format(c.creado, 'dd/MM/yyyy HH:mm')}">fecha</td>
-					<td><a th:href="@{/likert/{id}/respuestas.csv(id=${c.id})}">CSV</a></td>
-				</tr>
-				</tbody>
-			</table>
+			<div class="formulario">
+				<p class="ayuda">Se toma una muestra aleatoria de hallazgos con respuesta en la corrida elegida. Cada
+					participante ve la mitad con la recomendación de SonarQube (G1) y la otra mitad con la del LLM (G2), sin
+					saber cuál es cuál; la asignación cambia entre participantes.</p>
+				<form method="post" th:action="@{/likert/cuestionarios}" class="en-linea" th:unless="${#lists.isEmpty(opciones)}">
+					<label class="campo" for="opcion">Análisis y corrida G2
+						<select id="opcion" name="opcion" required>
+							<option th:each="o : ${opciones}" th:value="${o[0]}" th:text="${o[1]}">repo · corrida</option>
+						</select>
+					</label>
+					<label class="campo estrecho" for="tamano">Hallazgos
+						<input id="tamano" name="tamano" type="number" min="2" max="60" value="10">
+					</label>
+					<button type="submit">Crear cuestionario</button>
+				</form>
+				<p th:if="${#lists.isEmpty(opciones)}" class="aviso"><svg class="icono"><use href="/iconos.svg#info"/></svg>
+					<span>Primero interpreta hallazgos con IA en la pantalla 2.</span></p>
+				<div class="tabla-contenedor" th:unless="${#lists.isEmpty(cuestionarios)}">
+					<table>
+						<thead><tr><th>#</th><th>Repositorio</th><th>Corrida G2</th><th class="derecha">Hallazgos</th><th>Creado</th><th>Respuestas</th></tr></thead>
+						<tbody>
+						<tr th:each="c : ${cuestionarios}">
+							<td th:text="${c.id}">1</td>
+							<td th:text="${analisisPorId[c.analisisId]?.projectKey}">repo</td>
+							<td><span class="chip" th:text="${c.etiquetaCorrida}">corrida</span></td>
+							<td class="derecha" th:text="${totales[c.id]}">0</td>
+							<td class="ayuda" th:text="${#temporals.format(c.creado, 'dd/MM/yyyy HH:mm')}">fecha</td>
+							<td><a class="boton fantasma pequeno" th:href="@{/likert/{id}/respuestas.csv(id=${c.id})}">
+								<svg class="icono s"><use href="/iconos.svg#descargar"/></svg>CSV</a></td>
+						</tr>
+						</tbody>
+					</table>
+				</div>
+			</div>
 		</details>
 	</section>
 </main>

@@ -5,62 +5,69 @@
 <header th:replace="~{fragmentos :: menu('likert')}"></header>
 <main class="ancho">
 	<div class="navegacion">
-		<span>
-			<a th:href="@{/likert}">← Cuestionarios</a>
-			<a th:if="${anterior}" th:href="@{/likert/{c}/{i}(c=${c.id},i=${anterior})}">‹ Anterior</a>
-		</span>
-		<span class="ayuda">Participante <strong th:text="${codigo}">P1</strong> · pregunta
-			<span th:text="${posicion}">1</span> de <span th:text="${total}">1</span></span>
+		<nav class="miga" aria-label="Ruta">
+			<a th:href="@{/likert}"><svg class="icono s"><use href="/iconos.svg#volver"/></svg>Cuestionarios</a>
+			<span>/</span><span th:text="'Cuestionario ' + ${c.id}">Cuestionario 1</span>
+		</nav>
+		<div class="paginador">
+			<a th:if="${anterior}" class="boton secundario pequeno" th:href="@{/likert/{c}/{i}(c=${c.id},i=${anterior})}">
+				<svg class="icono s"><use href="/iconos.svg#izquierda"/></svg>Anterior</a>
+			<span class="posicion">Participante <strong th:text="${codigo}">P1</strong> · pregunta
+				<strong th:text="${posicion} + ' de ' + ${total}">1 de 1</strong></span>
+		</div>
 	</div>
-	<div class="barra"><div th:style="'width:' + ${hechas * 100 / total} + '%'"></div></div>
-	<div class="alerta" th:if="${error}" th:text="${error}"></div>
+	<div class="barra" role="progressbar" th:aria-valuenow="${hechas}" aria-valuemin="0" th:aria-valuemax="${total}">
+		<div th:style="'width:' + ${hechas * 100 / total} + '%'"></div></div>
+	<th:block th:replace="~{fragmentos :: avisos}"></th:block>
 
-	<div class="comparacion etiquetado">
-		<section class="tarjeta">
-			<p class="grupo">Hallazgo</p>
-			<h1 th:text="${h.regla}">java:S1</h1>
-			<dl class="datos">
-				<dt>Archivo</dt><dd><span th:text="${h.archivo}">archivo</span>:<span th:text="${h.lineaInicio}">1</span></dd>
-				<dt>Mensaje</dt><dd th:text="${h.mensaje}">mensaje</dd>
-			</dl>
-			<div class="codigo" th:unless="${#lists.isEmpty(h.lineas())}" style="margin-top: 12px">
-				<div th:each="l : ${h.lineas()}" class="linea" th:classappend="${l.marcada} ? 'marcada'"><span
-						class="num" th:text="${l.numero}">1</span><span class="txt" th:text="${l.texto}">código</span></div>
+	<div class="comparacion">
+		<section class="tarjeta neutra">
+			<div class="grupo-banda"><span>Hallazgo</span><span class="regla" th:text="${h.regla}">java:S1</span></div>
+			<div class="chips">
+				<span class="ruta"><svg class="icono s"><use href="/iconos.svg#archivo"/></svg><span
+						th:text="${h.archivo} + ':' + ${h.lineaInicio}">archivo:1</span></span>
 			</div>
+			<p class="mensaje cita" th:text="${h.mensaje}">mensaje</p>
+			<th:block th:unless="${#lists.isEmpty(h.lineas())}"><div th:replace="~{fragmentos :: lineas(${h.lineas()})}"></div></th:block>
 		</section>
 
-		<section class="tarjeta recomendacion-neutra">
-			<p class="grupo">Recomendación</p>
+		<section class="tarjeta neutra">
+			<div class="grupo-banda"><span>Recomendación</span><svg class="icono s"><use href="/iconos.svg#info"/></svg></div>
 			<p class="texto" th:text="${asignado.texto}">texto</p>
-			<div th:if="${!#strings.isEmpty(asignado.codigo)}">
-				<p class="grupo">Código propuesto</p>
+			<div class="seccion" th:if="${!#strings.isEmpty(asignado.codigo)}">
+				<h3>Código propuesto</h3>
 				<pre class="codigo propuesta" th:text="${asignado.codigo}">código</pre>
 			</div>
 		</section>
 	</div>
 
 	<section class="tarjeta">
-		<form method="post" th:action="@{/likert/{c}/{i}(c=${c.id},i=${asignado.item.id})}">
-			<table class="likert">
-				<thead>
-				<tr><th></th><th>1<br><small>Muy en desacuerdo</small></th><th>2</th><th>3<br><small>Neutral</small></th><th>4</th>
-					<th>5<br><small>Muy de acuerdo</small></th></tr>
-				</thead>
-				<tbody>
-				<tr th:each="p : ${preguntas}">
-					<td><strong th:text="${p.dimension}">Claridad</strong><br><span th:text="${p.afirmacion}">afirmación</span></td>
-					<td th:each="v : ${#numbers.sequence(1, 5)}">
-						<label class="punto"><input type="radio" th:name="${p.campo}" th:value="${v}" required
-								th:checked="${respuesta != null and respuesta[p.campo] == v}"
-								th:attr="aria-label=${p.dimension} + ' ' + ${v}"></label>
-					</td>
-				</tr>
-				</tbody>
-			</table>
-			<label class="obs">Comentario <small>(opcional)</small>
-				<textarea name="comentario" rows="3" th:text="${respuesta?.comentario}"></textarea>
+		<div class="titulo">
+			<h2>Tu valoración de la recomendación</h2>
+			<span class="ayuda"><small>1 = muy en desacuerdo · 5 = muy de acuerdo</small></span>
+		</div>
+		<form method="post" th:action="@{/likert/{c}/{i}(c=${c.id},i=${asignado.item.id})}" class="formulario" data-principal>
+			<div class="escala">
+				<fieldset th:each="p : ${preguntas}">
+					<legend><strong th:text="${p.dimension}">Claridad</strong><span th:text="${p.afirmacion}">afirmación</span></legend>
+					<div class="puntos">
+						<label class="punto" th:each="v : ${#numbers.sequence(1, 5)}">
+							<input type="radio" th:name="${p.campo}" th:value="${v}" required
+								   th:checked="${respuesta != null and respuesta[p.campo] == v}"
+								   th:aria-label="${p.dimension} + ' ' + ${v}">
+							<span><span th:text="${v}">1</span>
+								<small th:text="${v == 1} ? 'Muy en desacuerdo' : (${v == 2} ? 'En desacuerdo' : (${v == 3} ? 'Neutral' : (${v == 4} ? 'De acuerdo' : 'Muy de acuerdo')))">etiqueta</small></span>
+						</label>
+					</div>
+				</fieldset>
+			</div>
+			<label class="campo" for="comentario"><span>Comentario <small>(opcional)</small></span>
+				<textarea id="comentario" name="comentario" rows="3" th:text="${respuesta?.comentario}"></textarea>
 			</label>
-			<button type="submit">Guardar y siguiente</button>
+			<div class="acciones">
+				<button type="submit" class="primario">Guardar y siguiente<svg class="icono"><use href="/iconos.svg#derecha"/></svg></button>
+				<span class="atajos"><span><kbd>Ctrl</kbd>+<kbd>Enter</kbd> guardar</span></span>
+			</div>
 		</form>
 	</section>
 </main>

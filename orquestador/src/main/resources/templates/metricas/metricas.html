@@ -4,14 +4,17 @@
 <body>
 <header th:replace="~{fragmentos :: menu('metricas')}"></header>
 <main class="ancho">
-	<section class="tarjeta">
-		<h1>Métricas: G1 vs G2</h1>
-		<p class="ayuda">Compara SonarQube aislado (G1) con SonarQube + orquestador + LLM (G2) sobre los mismos
-			hallazgos, usando como verdad de referencia el etiquetado humano de la pantalla 3.</p>
+	<div class="pagina-cabecera">
+		<div>
+			<span class="eyebrow"><svg class="icono s"><use href="/iconos.svg#grafico"/></svg>Paso 5 · Resultados para el capítulo 5</span>
+			<h1>Métricas: G1 vs G2</h1>
+			<p class="ayuda">Compara SonarQube aislado (G1) con SonarQube + orquestador + LLM (G2) sobre los mismos
+				hallazgos, usando como verdad de referencia el etiquetado humano de la pantalla 3.</p>
+		</div>
 		<div class="acciones">
 			<form method="get" th:action="@{/metricas}" class="en-linea">
-				<label>Alcance
-					<select name="analisis" onchange="this.form.submit()">
+				<label class="campo" for="alcance">Alcance
+					<select id="alcance" name="analisis" onchange="this.form.submit()">
 						<option value="">Todos los repositorios</option>
 						<option th:each="a : ${disponibles}" th:value="${a.id}" th:text="${a.projectKey} + ' (#' + ${a.id} + ')'"
 								th:selected="${a.id == seleccionado}">repo</option>
@@ -19,30 +22,38 @@
 				</label>
 				<noscript><button type="submit">Ver</button></noscript>
 			</form>
-			<a class="boton" th:href="@{/metricas/excel(analisis=${seleccionado})}">Exportar a Excel</a>
+			<a class="boton primario" th:href="@{/metricas/excel(analisis=${seleccionado})}">
+				<svg class="icono"><use href="/iconos.svg#hoja"/></svg>Exportar a Excel</a>
 		</div>
-	</section>
+	</div>
 
 	<section class="tarjeta" th:with="et=${inf.etiquetado}">
-		<h2>Verdad de referencia (etiquetado humano)</h2>
+		<div class="titulo"><h2><svg class="icono"><use href="/iconos.svg#etiqueta"/></svg>Verdad de referencia (etiquetado humano)</h2></div>
 		<div class="kpis">
-			<div><p class="cifra" th:text="${et.conVerdad}">0</p><p class="ayuda">de <span th:text="${et.hallazgos}">0</span> hallazgos con verdad de referencia</p></div>
-			<div><p class="cifra" th:text="${et.vp} + ' / ' + ${et.fp}">0 / 0</p><p class="ayuda">VP / FP reales</p></div>
-			<div><p class="cifra" th:text="${et.porEvaluador.size()}">0</p><p class="ayuda">evaluadores</p></div>
-			<div><p class="cifra" th:text="${et.kappa} != null ? ${#numbers.formatDecimal(et.kappa, 1, 2, 'COMMA')} : '—'">—</p>
+			<div class="kpi"><span class="rotulo">Con verdad</span>
+				<p class="cifra"><span th:text="${et.conVerdad}">0</span> <small th:text="'de ' + ${et.hallazgos}">de 0</small></p>
+				<p class="ayuda">hallazgos con verdad de referencia</p></div>
+			<div class="kpi"><span class="rotulo">VP / FP reales</span>
+				<p class="cifra" th:text="${et.vp} + ' / ' + ${et.fp}">0 / 0</p>
+				<p class="ayuda">según la mayoría de evaluadores</p></div>
+			<div class="kpi"><span class="rotulo">Evaluadores</span>
+				<p class="cifra" th:text="${et.porEvaluador.size()}">0</p>
+				<p class="ayuda" th:unless="${et.porEvaluador.isEmpty()}">
+					<span th:each="e, s : ${et.porEvaluador}"><strong th:text="${e.key}">E1</strong> <span th:text="${e.value}">0</span><span th:unless="${s.last}">, </span></span></p></div>
+			<div class="kpi"><span class="rotulo">Acuerdo</span>
+				<p class="cifra" th:text="${et.kappa} != null ? ${#numbers.formatDecimal(et.kappa, 1, 2, 'COMMA')} : '—'">—</p>
 				<p class="ayuda">kappa de Fleiss · <span th:text="${et.interpretacionKappa}">—</span>
 					<span th:if="${et.comparablesAcuerdo > 0}" th:text="'(' + ${et.comparablesAcuerdo} + ' hallazgos etiquetados por todos)'"></span></p></div>
 		</div>
-		<p class="ayuda" th:if="${et.empates > 0}"><span th:text="${et.empates}">0</span> hallazgos con empate entre evaluadores
+		<p class="ayuda" th:if="${et.empates > 0}"><svg class="icono s"><use href="/iconos.svg#balanza"/></svg> <span th:text="${et.empates}">0</span> hallazgos con empate entre evaluadores
 			quedan fuera del cálculo.</p>
-		<p class="ayuda" th:unless="${et.porEvaluador.isEmpty()}">Etiquetas por evaluador:
-			<span th:each="e, s : ${et.porEvaluador}"><strong th:text="${e.key}">E1</strong> <span th:text="${e.value}">0</span><span th:unless="${s.last}">, </span></span></p>
-		<div class="aviso" th:if="${et.conVerdad == 0}">Aún no hay hallazgos etiquetados. Etiqueta en
-			<a th:href="@{/etiquetar}">3. Etiquetar</a> para poder calcular precisión y tasa de falsos positivos.</div>
+		<div class="aviso" th:if="${et.conVerdad == 0}"><svg class="icono"><use href="/iconos.svg#info"/></svg>
+			<span>Aún no hay hallazgos etiquetados. Etiqueta en <a th:href="@{/etiquetar}">3. Etiquetar</a> para poder
+				calcular precisión y tasa de falsos positivos.</span></div>
 	</section>
 
 	<section class="tarjeta" th:unless="${#lists.isEmpty(inf.comparaciones)}">
-		<h2>G1 vs G2 por corrida del LLM</h2>
+		<div class="titulo"><h2><svg class="icono"><use href="/iconos.svg#columnas"/></svg>G1 vs G2 por corrida del LLM</h2></div>
 		<p class="ayuda">Cada corrida se compara con G1 sobre los mismos hallazgos: los que tienen verdad de referencia
 			y respuesta de esa corrida (<em>n</em>).</p>
 
@@ -57,35 +68,38 @@
 					<div th:each="c : ${inf.comparaciones}" class="grupo-barras">
 						<p class="nombre" th:text="${c.corrida.etiqueta} + ' · n=' + ${c.n}">haiku</p>
 						<div class="fila-barra" th:with="v=${c.precisionG1}" th:title="'G1: ' + (${v} != null ? ${#numbers.formatPercent(v, 1, 1)} : '—')">
-							<div class="pista"><div class="barra-dato g1" th:style="'width:' + (${v} != null ? ${v * 100} : 0) + '%'"></div></div>
+							<span class="serie">G1</span><div class="pista"><div class="barra-dato g1" th:style="'width:' + (${v} != null ? ${v * 100} : 0) + '%'"></div></div>
 							<span th:text="${v} != null ? ${#numbers.formatPercent(v, 1, 1)} : '—'">0%</span>
 						</div>
 						<div class="fila-barra" th:with="v=${c.precisionG2}" th:title="'G2: ' + (${v} != null ? ${#numbers.formatPercent(v, 1, 1)} : '—')">
-							<div class="pista"><div class="barra-dato g2" th:style="'width:' + (${v} != null ? ${v * 100} : 0) + '%'"></div></div>
+							<span class="serie">G2</span><div class="pista"><div class="barra-dato g2" th:style="'width:' + (${v} != null ? ${v * 100} : 0) + '%'"></div></div>
 							<span th:text="${v} != null ? ${#numbers.formatPercent(v, 1, 1)} : '—'">0%</span>
 						</div>
 					</div>
+					<div class="eje" aria-hidden="true"><span></span><div><span>0</span><span>25</span><span>50</span><span>75</span><span>100 %</span></div><span></span></div>
 				</div>
 				<div class="panel">
 					<h3>Tasa de falsos positivos <small>(menos es mejor)</small></h3>
 					<div th:each="c : ${inf.comparaciones}" class="grupo-barras">
 						<p class="nombre" th:text="${c.corrida.etiqueta} + ' · n=' + ${c.n}">haiku</p>
 						<div class="fila-barra" th:with="v=${c.tasaFpG1}" th:title="'G1: ' + (${v} != null ? ${#numbers.formatDecimal(v, 1, 1, 'COMMA')} + ' %' : '—')">
-							<div class="pista"><div class="barra-dato g1" th:style="'width:' + (${v} != null ? ${v} : 0) + '%'"></div></div>
+							<span class="serie">G1</span><div class="pista"><div class="barra-dato g1" th:style="'width:' + (${v} != null ? ${v} : 0) + '%'"></div></div>
 							<span th:text="${v} != null ? ${#numbers.formatDecimal(v, 1, 1, 'COMMA')} + ' %' : '—'">0</span>
 						</div>
 						<div class="fila-barra" th:with="v=${c.tasaFpG2}" th:title="'G2: ' + (${v} != null ? ${#numbers.formatDecimal(v, 1, 1, 'COMMA')} + ' %' : '—')">
-							<div class="pista"><div class="barra-dato g2" th:style="'width:' + (${v} != null ? ${v} : 0) + '%'"></div></div>
+							<span class="serie">G2</span><div class="pista"><div class="barra-dato g2" th:style="'width:' + (${v} != null ? ${v} : 0) + '%'"></div></div>
 							<span th:text="${v} != null ? ${#numbers.formatDecimal(v, 1, 1, 'COMMA')} + ' %' : '—'">0</span>
 						</div>
 					</div>
+					<div class="eje" aria-hidden="true"><span></span><div><span>0</span><span>25</span><span>50</span><span>75</span><span>100 %</span></div><span></span></div>
 				</div>
 			</div>
 		</div>
 
+		<div class="tabla-contenedor">
 		<table class="metricas">
 			<thead>
-			<tr><th>Corrida</th><th>n</th><th>Precisión G1</th><th>Precisión G2</th><th>Tasa FP G1</th><th>Tasa FP G2</th>
+			<tr><th>Corrida</th><th>n</th><th>Precisión G1</th><th class="g2">Precisión G2</th><th>Tasa FP G1</th><th class="g2">Tasa FP G2</th>
 				<th>Reducción FP</th><th title="Hallazgos reales que el LLM marcó como falso positivo">VP descartados por error</th>
 				<th>FP descartados</th><th>Revisión humana</th><th title="VP reales que G2 conserva">VP conservados</th>
 				<th title="Veredictos VP/FP correctos, sin contar revisión humana">Exactitud LLM</th></tr>
@@ -95,9 +109,9 @@
 				<td th:text="${c.corrida.etiqueta}">haiku</td>
 				<td th:text="${c.n}">0</td>
 				<td th:text="${c.precisionG1} != null ? ${#numbers.formatPercent(c.precisionG1, 1, 1)} : '—'">—</td>
-				<td th:text="${c.precisionG2} != null ? ${#numbers.formatPercent(c.precisionG2, 1, 1)} : '—'">—</td>
+				<td class="g2" th:text="${c.precisionG2} != null ? ${#numbers.formatPercent(c.precisionG2, 1, 1)} : '—'">—</td>
 				<td th:text="${c.tasaFpG1} != null ? ${#numbers.formatDecimal(c.tasaFpG1, 1, 1, 'COMMA')} + ' %' : '—'">—</td>
-				<td th:text="${c.tasaFpG2} != null ? ${#numbers.formatDecimal(c.tasaFpG2, 1, 1, 'COMMA')} + ' %' : '—'">—</td>
+				<td class="g2" th:text="${c.tasaFpG2} != null ? ${#numbers.formatDecimal(c.tasaFpG2, 1, 1, 'COMMA')} + ' %' : '—'">—</td>
 				<td th:text="${c.reduccionFp} != null ? ${#numbers.formatDecimal(c.reduccionFp, 1, 1, 'COMMA')} + ' pp' : '—'">—</td>
 				<td th:text="${c.vpDescartados}" th:classappend="${c.vpDescartados > 0} ? 'alerta-texto'">0</td>
 				<td th:text="${c.fpDescartados}">0</td>
@@ -107,10 +121,12 @@
 			</tr>
 			</tbody>
 		</table>
+		</div>
 	</section>
 
 	<section class="tarjeta" th:if="${#lists.size(inf.porRepositorio) > 1}">
-		<h2>Por repositorio</h2>
+		<div class="titulo"><h2><svg class="icono"><use href="/iconos.svg#capas"/></svg>Por repositorio</h2></div>
+		<div class="tabla-contenedor">
 		<table class="metricas">
 			<thead><tr><th>Repositorio</th><th>Hallazgos</th><th>Con verdad</th><th>Corrida</th><th>n</th>
 				<th>Precisión G1</th><th>Precisión G2</th><th>Tasa FP G1</th><th>Tasa FP G2</th><th>VP descartados</th></tr></thead>
@@ -132,10 +148,12 @@
 			</th:block>
 			</tbody>
 		</table>
+		</div>
 	</section>
 
 	<section class="tarjeta" th:unless="${#lists.isEmpty(inf.usos)}">
-		<h2>Costo y tiempo por corrida</h2>
+		<div class="titulo"><h2><svg class="icono"><use href="/iconos.svg#reloj"/></svg>Costo y tiempo por corrida</h2></div>
+		<div class="tabla-contenedor">
 		<table class="metricas">
 			<thead><tr><th>Corrida</th><th>Respuestas</th><th>Tokens entrada</th><th>Tokens salida</th>
 				<th>Coste de referencia</th><th>Latencia media</th></tr></thead>
@@ -150,17 +168,24 @@
 			</tr>
 			</tbody>
 		</table>
+		</div>
 		<p class="ayuda">El coste es de referencia (precios de lista de la API): con la suscripción no se cobra.</p>
 	</section>
 
 	<section class="tarjeta">
-		<h2>Utilidad percibida (Likert 1–5)</h2>
-		<p th:if="${#lists.isEmpty(inf.likert)}" class="ayuda">Aún no hay respuestas. Crea un cuestionario y compártelo
-			en <a th:href="@{/likert}">4. Likert</a>.</p>
-		<div th:each="l : ${inf.likert}">
-			<p class="ayuda">Corrida <strong th:text="${l.corrida}">haiku</strong> ·
-				<span th:text="${l.participantes}">0</span> participantes ·
-				diferencia global G2 − G1: <strong th:text="${l.diferencia} != null ? ${#numbers.formatDecimal(l.diferencia, 1, 2, 'COMMA')} : '—'">0</strong></p>
+		<div class="titulo"><h2><svg class="icono"><use href="/iconos.svg#encuesta"/></svg>Utilidad percibida (Likert 1–5)</h2></div>
+		<div class="vacio" th:if="${#lists.isEmpty(inf.likert)}">
+			<svg class="icono"><use href="/iconos.svg#encuesta"/></svg>
+			<strong>Aún no hay respuestas</strong>
+			<span>Crea un cuestionario y compártelo en <a th:href="@{/likert}">4. Likert</a>.</span>
+		</div>
+		<div th:each="l : ${inf.likert}" class="likert-bloque">
+			<div class="meta">
+				<span>Corrida <strong th:text="${l.corrida}">corrida</strong></span>
+				<span><svg class="icono s"><use href="/iconos.svg#usuario"/></svg><span th:text="${l.participantes} + ' participantes'">0</span></span>
+				<span class="diferencia">diferencia global G2 − G1: <strong th:text="${l.diferencia} != null ? ${#numbers.formatDecimal(l.diferencia, 1, 2, 'COMMA')} : '—'">0</strong></span>
+			</div>
+			<div class="tabla-contenedor">
 			<table class="metricas">
 				<thead><tr><th>Condición</th><th>Respuestas</th><th>Claridad</th><th>Pertinencia</th><th>Accionabilidad</th><th>Global</th></tr></thead>
 				<tbody>
@@ -172,6 +197,7 @@
 				</tr>
 				</tbody>
 			</table>
+			</div>
 		</div>
 		<p class="ayuda" th:unless="${#lists.isEmpty(inf.likert)}">Media (± desviación estándar). Cada participante
 			valora la mitad de los hallazgos en G1 y la otra mitad en G2 sin saber cuál es cuál.</p>

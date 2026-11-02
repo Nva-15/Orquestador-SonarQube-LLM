@@ -4,49 +4,86 @@
 <body>
 <header th:replace="~{fragmentos :: menu('analisis')}"></header>
 <main>
-	<section class="tarjeta">
-		<h1>Nuevo análisis</h1>
-		<p class="ayuda">Indica la ruta de un repositorio Java en este equipo o su URL git. El orquestador trabaja
-			sobre una copia en <code>repositorios/</code>, la compila en Docker si es Maven o Gradle y la analiza
-			en SonarQube con el perfil <strong th:text="${perfil}">Tesis Java</strong>.</p>
-
-		<div class="alerta" th:unless="${tokenDefinido}">
-			Falta la variable de entorno <code>SONAR_TOKEN</code>. Defínela y reinicia el orquestador para poder
-			analizar.
+	<div class="pagina-cabecera">
+		<div>
+			<span class="eyebrow"><svg class="icono s"><use href="/iconos.svg#escanear"/></svg>Paso 1 · Escaneo con SonarQube</span>
+			<h1>Nuevo análisis</h1>
+			<p class="ayuda">Analiza cualquier repositorio Java con el perfil de reglas de la tesis. El orquestador
+				trabaja sobre una copia y nunca modifica el original.</p>
 		</div>
-		<div class="alerta" th:if="${error}" th:text="${error}"></div>
+	</div>
 
-		<form method="post" th:action="@{/analisis}" class="formulario">
-			<label>Ruta o URL del repositorio
-				<input name="origen" required th:value="${origen}"
-					   placeholder="D:\repos\mi-proyecto   o   https://github.com/usuario/repo.git">
-			</label>
-			<label>Clave del proyecto en Sonar <small>(opcional; por defecto, el nombre de la carpeta)</small>
-				<input name="clave" placeholder="mi-proyecto">
-			</label>
-			<button type="submit" th:disabled="${!tokenDefinido}">Analizar</button>
-		</form>
-	</section>
+	<div class="alerta" th:unless="${tokenDefinido}" role="alert">
+		<svg class="icono"><use href="/iconos.svg#llave"/></svg>
+		<span>Falta la variable de entorno <code>SONAR_TOKEN</code>. Defínela y reinicia el orquestador para poder
+			analizar.</span>
+	</div>
+	<div class="alerta" th:if="${error}" role="alert"><svg class="icono"><use href="/iconos.svg#alerta"/></svg><span th:text="${error}">error</span></div>
 
-	<section class="tarjeta">
-		<h2>Análisis realizados</h2>
-		<p th:if="${#lists.isEmpty(analisis)}" class="ayuda">Todavía no hay análisis.</p>
-		<table th:unless="${#lists.isEmpty(analisis)}">
-			<thead>
-			<tr><th>#</th><th>Proyecto</th><th>Origen</th><th>Build</th><th>Estado</th><th>Hallazgos</th><th>Fecha</th></tr>
-			</thead>
-			<tbody>
-			<tr th:each="a : ${analisis}">
-				<td><a th:href="@{/analisis/{id}(id=${a.id})}" th:text="${a.id}">1</a></td>
-				<td th:text="${a.projectKey}">clave</td>
-				<td class="origen" th:text="${a.origen}">ruta</td>
-				<td th:text="${a.tipoBuild} ?: '—'">maven</td>
-				<td><span class="estado" th:classappend="${a.estado.name()}" th:text="${a.estado}">ESTADO</span></td>
-				<td th:text="${a.totalHallazgos} ?: '—'">0</td>
-				<td th:text="${#temporals.format(a.creado, 'dd/MM/yyyy HH:mm')}">fecha</td>
-			</tr>
-			</tbody>
-		</table>
+	<div class="rejilla-2">
+		<section class="tarjeta">
+			<div class="titulo"><h2>Repositorio a analizar</h2></div>
+			<form method="post" th:action="@{/analisis}" class="formulario">
+				<label class="campo" for="origen">Ruta local o URL git
+					<span class="campo-icono">
+						<svg class="icono"><use href="/iconos.svg#git"/></svg>
+						<input id="origen" name="origen" class="grande mono" required th:value="${origen}" autocomplete="off"
+							   spellcheck="false" placeholder="D:\repos\mi-proyecto   o   https://github.com/usuario/repo.git">
+					</span>
+					<span class="pista-campo">Una carpeta de este equipo o un repositorio público clonable.</span>
+				</label>
+				<label class="campo" for="clave"><span>Clave del proyecto en Sonar <small>(opcional)</small></span>
+					<input id="clave" name="clave" class="mono" placeholder="mi-proyecto" autocomplete="off" spellcheck="false">
+					<span class="pista-campo">Si la dejas vacía se usa el nombre de la carpeta.</span>
+				</label>
+				<div class="acciones">
+					<button type="submit" class="primario" th:disabled="${!tokenDefinido}">
+						<svg class="icono"><use href="/iconos.svg#escanear"/></svg>Analizar repositorio</button>
+					<span class="ayuda"><small>Perfil de reglas: <strong th:text="${perfil}">Tesis Java</strong></small></span>
+				</div>
+			</form>
+		</section>
+
+		<section class="tarjeta plana">
+			<div class="titulo"><h2>Qué hace el orquestador</h2></div>
+			<ol class="pipeline">
+				<li><div><b>Copia el repositorio</b><span>a <code>repositorios/&lt;clave&gt;</code>, o lo clona si es una URL.</span></div></li>
+				<li><div><b>Compila en Docker</b><span>si detecta Maven o Gradle, para que Sonar vea las clases y dependencias.</span></div></li>
+				<li><div><b>Escanea con SonarQube</b><span>con el perfil <strong th:text="${perfil}">Tesis Java</strong> y espera al motor de cálculo.</span></div></li>
+				<li><div><b>Extrae hallazgos y contexto</b><span>regla, mensaje y método o clase contenedora (JavaParser).</span></div></li>
+			</ol>
+		</section>
+	</div>
+
+	<section class="tarjeta sin-relleno">
+		<div class="titulo">
+			<h2>Análisis realizados</h2>
+			<span class="ayuda" th:unless="${#lists.isEmpty(analisis)}"><small th:text="${#lists.size(analisis)} + ' en total'">0</small></span>
+		</div>
+		<div class="vacio" th:if="${#lists.isEmpty(analisis)}">
+			<svg class="icono"><use href="/iconos.svg#bandeja"/></svg>
+			<strong>Todavía no hay análisis</strong>
+			<span>Indica la ruta de un repositorio arriba para lanzar el primero.</span>
+		</div>
+		<div class="tabla-contenedor" th:unless="${#lists.isEmpty(analisis)}">
+			<table>
+				<thead>
+				<tr><th>#</th><th>Proyecto</th><th>Origen</th><th>Build</th><th>Estado</th><th class="derecha">Hallazgos</th><th>Fecha</th></tr>
+				</thead>
+				<tbody>
+				<tr th:each="a : ${analisis}" th:data-href="@{/analisis/{id}(id=${a.id})}">
+					<td class="ayuda" th:text="${a.id}">1</td>
+					<td><a th:href="@{/analisis/{id}(id=${a.id})}" th:text="${a.projectKey}"><strong>clave</strong></a></td>
+					<td class="origen"><span class="ruta" th:text="${a.origen}">ruta</span></td>
+					<td><span class="chip" th:text="${a.tipoBuild} ?: '—'">maven</span></td>
+					<td><span class="estado" th:classappend="${a.estado.name()} + (${a.estado.enCurso()} ? ' en-curso' : '')"
+							  th:text="${#strings.capitalize(#strings.toLowerCase(#strings.replace(a.estado.name(), '_', ' ')))}">Estado</span></td>
+					<td class="derecha" th:text="${a.totalHallazgos} ?: '—'">0</td>
+					<td class="ayuda" th:text="${#temporals.format(a.creado, 'dd/MM/yyyy HH:mm')}">fecha</td>
+				</tr>
+				</tbody>
+			</table>
+		</div>
 	</section>
 </main>
 </body>

@@ -2,24 +2,75 @@
 <html xmlns:th="http://www.thymeleaf.org" lang="es">
 <head th:fragment="head(titulo, refrescar)">
 	<meta charset="UTF-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 	<meta th:if="${refrescar}" http-equiv="refresh" content="3">
 	<title th:text="${titulo} + ' · Orquestador'">Orquestador</title>
+	<script>try { var t = localStorage.getItem("tema"); if (t) document.documentElement.dataset.theme = t; } catch (e) {}</script>
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
 	<link rel="stylesheet" th:href="@{/estilos.css}">
+	<link rel="icon" th:href="@{/iconos.svg}">
+	<script th:src="@{/app.js}" defer></script>
 </head>
 <body>
 <header th:fragment="menu(activo)" class="cabecera">
-	<div class="marca">
-		<strong>Orquestador</strong>
-		<span>SonarQube + LLM · Revisión de código Java</span>
+	<a class="marca" th:href="@{/analisis}">
+		<span class="logo"><svg class="icono"><use href="/iconos.svg#codigo"/></svg></span>
+		<span><strong>Orquestador</strong><span>SonarQube + LLM · Java</span></span>
+	</a>
+	<div>
+		<p class="menu-titulo">Flujo de la evaluación</p>
+		<nav class="flujo" aria-label="Pantallas">
+			<a th:href="@{/analisis}" th:classappend="${activo == 'analisis'} ? 'activo'"
+			   th:attr="aria-current=${activo == 'analisis'} ? 'page'">
+				<span class="paso">1</span><b>Nuevo análisis</b><small>Escanear un repositorio</small></a>
+			<a th:href="@{/resultados}" th:classappend="${activo == 'resultados'} ? 'activo'"
+			   th:attr="aria-current=${activo == 'resultados'} ? 'page'">
+				<span class="paso">2</span><b>Resultados</b><small>G1 vs G2 por hallazgo</small></a>
+			<a th:href="@{/etiquetar}" th:classappend="${activo == 'etiquetar'} ? 'activo'"
+			   th:attr="aria-current=${activo == 'etiquetar'} ? 'page'">
+				<span class="paso">3</span><b>Etiquetar</b><small>Verdad de referencia (ciego)</small></a>
+			<a th:href="@{/likert}" th:classappend="${activo == 'likert'} ? 'activo'"
+			   th:attr="aria-current=${activo == 'likert'} ? 'page'">
+				<span class="paso">4</span><b>Likert</b><small>Utilidad percibida</small></a>
+			<a th:href="@{/metricas}" th:classappend="${activo == 'metricas'} ? 'activo'"
+			   th:attr="aria-current=${activo == 'metricas'} ? 'page'">
+				<span class="paso">5</span><b>Métricas</b><small>Precisión, tasa FP, Excel</small></a>
+		</nav>
 	</div>
-	<nav>
-		<a th:href="@{/analisis}" th:classappend="${activo == 'analisis'} ? 'activo'">1. Nuevo análisis</a>
-		<a th:href="@{/resultados}" th:classappend="${activo == 'resultados'} ? 'activo'">2. Resultados G1 vs G2</a>
-		<a th:href="@{/etiquetar}" th:classappend="${activo == 'etiquetar'} ? 'activo'">3. Etiquetar</a>
-		<a th:href="@{/likert}" th:classappend="${activo == 'likert'} ? 'activo'">4. Likert</a>
-		<a th:href="@{/metricas}" th:classappend="${activo == 'metricas'} ? 'activo'">5. Métricas</a>
-	</nav>
+	<div class="lateral-pie">
+		<div class="leyenda-grupos">
+			<span><i class="punto-serie g1"></i>G1 · SonarQube aislado</span>
+			<span><i class="punto-serie g2"></i>G2 · SonarQube + LLM</span>
+		</div>
+		<div class="tema" role="group" aria-label="Tema de color">
+			<button type="button" data-tema="" title="Tema del sistema" aria-pressed="true"><svg class="icono s"><use href="/iconos.svg#pantalla"/></svg></button>
+			<button type="button" data-tema="light" title="Tema claro" aria-pressed="false"><svg class="icono s"><use href="/iconos.svg#sol"/></svg></button>
+			<button type="button" data-tema="dark" title="Tema oscuro" aria-pressed="false"><svg class="icono s"><use href="/iconos.svg#luna"/></svg></button>
+		</div>
+	</div>
 </header>
+
+<!-- Avisos de la página (flash) -->
+<th:block th:fragment="avisos">
+	<div class="aviso" th:if="${aviso}" role="status"><svg class="icono"><use href="/iconos.svg#info"/></svg><span th:text="${aviso}">aviso</span></div>
+	<div class="alerta" th:if="${error}" role="alert"><svg class="icono"><use href="/iconos.svg#alerta"/></svg><span th:text="${error}">error</span></div>
+</th:block>
+
+<!-- Chips de tipo y severidad de un hallazgo -->
+<th:block th:fragment="chips(h)">
+	<span class="chip" th:title="'Tipo: ' + ${h.tipo}">
+		<svg class="icono"><use th:href="'/iconos.svg#' + (${h.tipo} == 'BUG' ? 'bug' : (${h.tipo} == 'VULNERABILITY' ? 'escudo' : (${h.tipo} == 'SECURITY_HOTSPOT' ? 'llama' : 'olor')))"/></svg>
+		<span th:text="${#strings.replace(h.tipo, '_', ' ')}">BUG</span></span>
+	<span class="chip" th:classappend="'sev-' + ${h.severidad}" th:text="${h.severidad}" th:title="'Severidad: ' + ${h.severidad}">MAJOR</span>
+	<small th:if="${h.esTest}" class="etiqueta-test" title="El hallazgo está en código de pruebas">test</small>
+</th:block>
+
+<!-- Visor de líneas de código con la línea del hallazgo marcada -->
+<div th:fragment="lineas(lista)" class="codigo">
+	<div th:each="l : ${lista}" class="linea" th:classappend="${l.marcada} ? 'marcada'"><span
+			class="num" th:text="${l.numero}">1</span><span class="txt" th:text="${l.texto}">código</span></div>
+</div>
 </body>
 </html>

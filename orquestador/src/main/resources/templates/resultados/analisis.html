@@ -3,107 +3,177 @@
 <head th:replace="~{fragmentos :: head('Resultados ' + ${a.projectKey}, ${enCurso})}"></head>
 <body>
 <header th:replace="~{fragmentos :: menu('resultados')}"></header>
-<main>
-	<section class="tarjeta">
-		<p><a th:href="@{/resultados}">← Todos los análisis</a></p>
-		<h1>Resultados: <span th:text="${a.projectKey}">clave</span></h1>
-		<p class="ayuda">Análisis #<span th:text="${a.id}">1</span> ·
-			<span th:text="${a.origen}">origen</span> · perfil <span th:text="${a.perfilReglas}">Tesis Java</span></p>
+<main class="ancho" th:with="total=${#lists.size(hallazgos)}">
+	<nav class="miga" aria-label="Ruta">
+		<a th:href="@{/resultados}"><svg class="icono s"><use href="/iconos.svg#volver"/></svg>Resultados</a>
+		<span>/</span><span th:text="${a.projectKey}">clave</span>
+	</nav>
 
-		<div class="aviso" th:if="${aviso}" th:text="${aviso}"></div>
-		<div class="alerta" th:if="${error}" th:text="${error}"></div>
+	<div class="pagina-cabecera">
+		<div>
+			<span class="eyebrow" th:text="'Análisis #' + ${a.id} + ' · perfil ' + ${a.perfilReglas}">Análisis #1</span>
+			<h1 th:text="${a.projectKey}">clave</h1>
+			<div class="meta"><span class="ruta"><svg class="icono s"><use href="/iconos.svg#git"/></svg><span th:text="${a.origen}">origen</span></span></div>
+		</div>
+		<div class="acciones">
+			<a class="boton secundario" th:href="@{/analisis/{id}(id=${a.id})}"><svg class="icono"><use href="/iconos.svg#terminal"/></svg>Registro del análisis</a>
+		</div>
+	</div>
 
-		<div class="resumen">
-			<div class="bloque g1">
-				<h2>G1 · SonarQube</h2>
-				<p class="cifra" th:text="${#lists.size(hallazgos)}">0</p>
-				<p class="ayuda">hallazgos</p>
+	<th:block th:replace="~{fragmentos :: avisos}"></th:block>
+
+	<div class="resumen">
+		<section class="tarjeta g1">
+			<div class="grupo-banda"><span>G1 · SonarQube aislado</span><svg class="icono s"><use href="/iconos.svg#escanear"/></svg></div>
+			<div class="cuerpo">
+				<p class="cifra"><span th:text="${total}">0</span> <small>hallazgos</small></p>
 				<ul class="conteo">
-					<li th:each="e : ${porTipo}"><span th:text="${e.key}">BUG</span> <strong th:text="${e.value}">0</strong></li>
+					<li th:each="e : ${porTipo}">
+						<span class="chip"><svg class="icono"><use th:href="'/iconos.svg#' + (${e.key} == 'BUG' ? 'bug' : (${e.key} == 'VULNERABILITY' ? 'escudo' : (${e.key} == 'SECURITY_HOTSPOT' ? 'llama' : 'olor')))"/></svg><span th:text="${#strings.replace(e.key, '_', ' ')}">BUG</span></span>
+						<strong th:text="${e.value}">0</strong></li>
 				</ul>
+				<p class="ayuda"><small>Sin filtro: todos los hallazgos se presentan como problemas.</small></p>
 			</div>
-			<div class="bloque g2">
-				<h2>G2 · SonarQube + LLM</h2>
-				<nav class="pestanas" th:unless="${corridas.isEmpty()}">
+		</section>
+
+		<section class="tarjeta g2">
+			<div class="grupo-banda"><span>G2 · SonarQube + orquestador + LLM</span><svg class="icono s"><use href="/iconos.svg#ia"/></svg></div>
+			<div class="cuerpo">
+				<nav class="pestanas" th:unless="${corridas.isEmpty()}" aria-label="Corridas del LLM">
 					<a th:each="c : ${corridas}" th:href="@{/resultados/{id}(id=${a.id},corrida=${c.clave})}"
-					   th:classappend="${c == actual} ? 'activa'" th:text="${c.etiqueta}">haiku · prompt v1</a>
+					   th:classappend="${c == actual} ? 'activa'" th:text="${c.etiqueta}">corrida</a>
 				</nav>
-				<ul class="conteo veredictos">
+				<div class="apilada" th:if="${total > 0}" role="img"
+					 th:attr="aria-label='Problema real ' + ${porVeredicto['VERDADERO_POSITIVO']} + ', falso positivo ' + ${porVeredicto['FALSO_POSITIVO']} + ', revisión humana ' + ${porVeredicto['REQUIERE_REVISION_HUMANA']} + ', sin interpretar ' + ${porVeredicto['PENDIENTE']}">
+					<span th:each="v : ${ {'VERDADERO_POSITIVO', 'FALSO_POSITIVO', 'REQUIERE_REVISION_HUMANA', 'PENDIENTE'} }"
+						  th:if="${porVeredicto.get(v) > 0}" th:class="${v}"
+						  th:style="'flex:' + ${porVeredicto.get(v)}" th:title="${porVeredicto.get(v)}"></span>
+				</div>
+				<ul class="conteo">
 					<li><span class="badge VERDADERO_POSITIVO">Problema real</span> <strong th:text="${porVeredicto['VERDADERO_POSITIVO']}">0</strong></li>
 					<li><span class="badge FALSO_POSITIVO">Falso positivo</span> <strong th:text="${porVeredicto['FALSO_POSITIVO']}">0</strong></li>
 					<li><span class="badge REQUIERE_REVISION_HUMANA">Revisión humana</span> <strong th:text="${porVeredicto['REQUIERE_REVISION_HUMANA']}">0</strong></li>
 					<li><span class="badge PENDIENTE">Sin interpretar</span> <strong th:text="${porVeredicto['PENDIENTE']}">0</strong></li>
 				</ul>
-				<p class="ayuda" th:if="${uso.tokensEntrada > 0}">
-					<span th:text="${uso.modelos}">modelo</span> ·
-					<span th:text="${#numbers.formatInteger(uso.tokensEntrada, 1, 'POINT')}">0</span> tokens de entrada,
-					<span th:text="${#numbers.formatInteger(uso.tokensSalida, 1, 'POINT')}">0</span> de salida ·
-					latencia media <span th:text="${#numbers.formatDecimal(uso.latenciaMediaMs / 1000.0, 1, 1, 'COMMA')}">0</span> s ·
-					coste de referencia US$ <span th:text="${#numbers.formatDecimal(uso.costoReferenciaUsd, 1, 4, 'COMMA')}">0</span>
-					<small>(no se cobra con la suscripción)</small>
-				</p>
-				<p th:if="${coinciden}" class="acuerdo">Acuerdo entre corridas:
-					<strong th:text="${enAcuerdo} + ' de ' + ${comparables}">0 de 0</strong> hallazgos con el mismo veredicto</p>
+				<p th:if="${coinciden}" class="acuerdo"><svg class="icono s"><use href="/iconos.svg#balanza"/></svg>
+					<span>Acuerdo entre corridas: <strong th:text="${enAcuerdo} + ' de ' + ${comparables}">0 de 0</strong> hallazgos con el mismo veredicto</span></p>
+				<dl class="uso" th:if="${uso.tokensEntrada > 0}">
+					<div><dt>Modelo</dt><dd th:text="${uso.modelos}">modelo</dd></div>
+					<div><dt>Tokens entrada</dt><dd th:text="${#numbers.formatInteger(uso.tokensEntrada, 1, 'POINT')}">0</dd></div>
+					<div><dt>Tokens salida</dt><dd th:text="${#numbers.formatInteger(uso.tokensSalida, 1, 'POINT')}">0</dd></div>
+					<div><dt>Latencia media</dt><dd th:text="${#numbers.formatDecimal(uso.latenciaMediaMs / 1000.0, 1, 1, 'COMMA')} + ' s'">0 s</dd></div>
+					<div><dt title="Precio de lista de la API; con la suscripción no se cobra">Coste ref.*</dt><dd th:text="'US$ ' + ${#numbers.formatDecimal(uso.costoReferenciaUsd, 1, 4, 'COMMA')}">0</dd></div>
+				</dl>
+				<p class="ayuda" th:if="${uso.tokensEntrada > 0}"><small>* Coste de referencia: con la suscripción no se cobra.</small></p>
 			</div>
-		</div>
+		</section>
+	</div>
 
-		<div class="acciones">
+	<section class="tarjeta">
+		<div class="barra-acciones">
 			<form method="post" th:action="@{/resultados/{id}/interpretar(id=${a.id})}" class="en-linea">
-				<label>Modelo
-					<select name="modelo" th:disabled="${enCurso}">
-						<option th:each="m : ${modelos}" th:value="${m}" th:text="${m}">haiku</option>
+				<label class="campo estrecho" for="modelo">Modelo
+					<select id="modelo" name="modelo" th:disabled="${enCurso}">
+						<option th:each="m : ${modelos}" th:value="${m}" th:text="${m}">modelo</option>
 					</select>
 				</label>
 				<label class="casilla" title="Vuelve a interpretar todos los hallazgos; la corrida anterior queda en el historial">
-					<input type="checkbox" name="repetir" value="true" th:disabled="${enCurso}"> Repetir corrida</label>
-				<button type="submit" th:disabled="${enCurso or #lists.isEmpty(hallazgos)}">Interpretar con IA</button>
+					<input type="checkbox" name="repetir" value="true" th:disabled="${enCurso}">
+					<svg class="icono s"><use href="/iconos.svg#repetir"/></svg>Repetir corrida</label>
+				<button type="submit" class="primario" th:disabled="${enCurso or #lists.isEmpty(hallazgos)}">
+					<svg class="icono" th:classappend="${enCurso} ? 'girando'"><use th:href="${enCurso} ? '/iconos.svg#cargando' : '/iconos.svg#ia'"/></svg>
+					<span th:text="${enCurso} ? 'Interpretando…' : 'Interpretar con IA'">Interpretar con IA</span></button>
 			</form>
-			<form method="post" th:action="@{/resultados/{id}/extraer(id=${a.id})}" class="en-linea"
-				  th:if="${#lists.isEmpty(hallazgos)}">
-				<button type="submit" class="secundario">Extraer hallazgos de Sonar</button>
+			<form method="post" th:action="@{/resultados/{id}/extraer(id=${a.id})}" th:if="${#lists.isEmpty(hallazgos)}">
+				<button type="submit" class="secundario"><svg class="icono"><use href="/iconos.svg#descargar"/></svg>Extraer hallazgos de Sonar</button>
 			</form>
+			<p class="ayuda" th:unless="${#lists.isEmpty(hallazgos)}"><small>Se omiten los hallazgos que ya tienen respuesta válida
+				con el mismo modelo y versión de prompt.</small></p>
 		</div>
 
 		<div class="progreso" th:if="${progreso}">
+			<div class="progreso-cabecera">
+				<span><span th:text="${progreso.hechos}">0</span> de <span th:text="${progreso.total}">0</span> interpretados con
+					<span th:text="${progreso.modelo}">modelo</span></span>
+				<span th:text="${progreso.porcentaje} + ' %'">0 %</span>
+			</div>
 			<div class="barra"><div th:style="'width:' + ${progreso.porcentaje} + '%'"></div></div>
 			<p class="ayuda">
-				<span th:text="${progreso.hechos}">0</span> de <span th:text="${progreso.total}">0</span> interpretados
-				con <span th:text="${progreso.modelo}">haiku</span>
-				<span th:if="${progreso.errores > 0}"> · <span th:text="${progreso.errores}">0</span> con error</span>
-				<span th:if="${progreso.actual}"> · ahora: <code th:text="${progreso.actual}">regla</code></span>
+				<span th:if="${progreso.errores > 0}" class="alerta-texto"><span th:text="${progreso.errores}">0</span> con error · </span>
+				<span th:if="${progreso.actual}">Ahora: <code th:text="${progreso.actual}">regla</code></span>
 				<span th:if="${progreso.mensaje}"> · <strong th:text="${progreso.mensaje}">mensaje</strong></span>
 			</p>
 		</div>
 	</section>
 
-	<section class="tarjeta">
-		<h2>Hallazgos</h2>
-		<p th:if="${#lists.isEmpty(hallazgos)}" class="ayuda">No hay hallazgos extraídos para este análisis.</p>
-		<table th:unless="${#lists.isEmpty(hallazgos)}" class="hallazgos">
-			<thead>
-			<tr><th>Regla</th><th>Tipo · severidad</th><th>Ubicación</th><th>Mensaje de Sonar (G1)</th><th>Veredicto IA (G2<span th:if="${actual}" th:text="' · ' + ${actual.modelo}"></span>)</th>
-				<th th:if="${coinciden}" title="¿Todas las corridas dan el mismo veredicto?">Coinciden</th></tr>
-			</thead>
-			<tbody>
-			<tr th:each="h : ${hallazgos}" th:with="r=${recs[h.id]}">
-				<td><a th:href="@{/hallazgos/{id}(id=${h.id},corrida=${actual?.clave})}" th:text="${h.regla}">java:S1</a></td>
-				<td><span th:text="${h.tipo}">BUG</span><br><small th:text="${h.severidad}">MAJOR</small></td>
-				<td class="origen"><span th:text="${h.archivo}">archivo</span>:<span th:text="${h.lineaInicio}">1</span>
-					<small th:if="${h.esTest}" class="etiqueta-test">test</small></td>
-				<td th:text="${h.mensaje}">mensaje</td>
-				<td>
-					<span th:if="${r}" class="badge" th:classappend="${r.veredicto.name()}" th:text="${r.veredicto.etiqueta}">VP</span>
-					<small th:if="${r}" th:text="${#numbers.formatDecimal(r.confianza, 1, 2, 'COMMA')}">0,9</small>
-					<span th:unless="${r}" class="badge PENDIENTE">Sin interpretar</span>
-				</td>
-				<td th:if="${coinciden}" th:with="c=${coinciden[h.id]}">
-					<span th:if="${c == null}" class="ayuda">—</span>
-					<span th:if="${c == true}" class="si">✓</span>
-					<span th:if="${c == false}" class="badge discrepancia">Discrepan</span>
-				</td>
-			</tr>
-			</tbody>
-		</table>
+	<section class="tarjeta sin-relleno">
+		<div class="titulo">
+			<h2>Hallazgos</h2>
+			<span class="ayuda"><small>Pulsa una fila para ver G1 y G2 lado a lado · <kbd>/</kbd> para buscar</small></span>
+		</div>
+
+		<div class="vacio" th:if="${#lists.isEmpty(hallazgos)}">
+			<svg class="icono"><use href="/iconos.svg#bandeja"/></svg>
+			<strong>No hay hallazgos extraídos</strong>
+			<span>Usa «Extraer hallazgos de Sonar» para traerlos del último análisis.</span>
+		</div>
+
+		<th:block th:unless="${#lists.isEmpty(hallazgos)}">
+			<div class="herramientas" data-filtrar="tabla-hallazgos">
+				<label class="buscar campo-icono">
+					<span class="oculto-visual">Buscar</span>
+					<svg class="icono s"><use href="/iconos.svg#buscar"/></svg>
+					<input type="search" placeholder="Regla, archivo o mensaje…" autocomplete="off">
+				</label>
+				<div class="filtros" role="group" aria-label="Filtrar por veredicto">
+					<button type="button" class="filtro" data-campo="veredicto" data-valor="" aria-pressed="true">Todos</button>
+					<button type="button" class="filtro" data-campo="veredicto" data-valor="VERDADERO_POSITIVO" aria-pressed="false">Problema real <span class="n" th:text="${porVeredicto['VERDADERO_POSITIVO']}">0</span></button>
+					<button type="button" class="filtro" data-campo="veredicto" data-valor="FALSO_POSITIVO" aria-pressed="false">Falso positivo <span class="n" th:text="${porVeredicto['FALSO_POSITIVO']}">0</span></button>
+					<button type="button" class="filtro" data-campo="veredicto" data-valor="REQUIERE_REVISION_HUMANA" aria-pressed="false">Revisión <span class="n" th:text="${porVeredicto['REQUIERE_REVISION_HUMANA']}">0</span></button>
+					<button type="button" class="filtro" data-campo="veredicto" data-valor="PENDIENTE" aria-pressed="false">Sin interpretar <span class="n" th:text="${porVeredicto['PENDIENTE']}">0</span></button>
+					<button type="button" class="filtro" data-campo="coinciden" data-valor="no" aria-pressed="false" th:if="${coinciden}">Discrepan</button>
+				</div>
+				<select data-campo="tipo" aria-label="Filtrar por tipo">
+					<option value="">Todos los tipos</option>
+					<option th:each="e : ${porTipo}" th:value="${e.key}" th:text="${#strings.replace(e.key, '_', ' ')}">BUG</option>
+				</select>
+				<span class="contador" aria-live="polite"></span>
+			</div>
+			<div class="tabla-contenedor">
+				<table id="tabla-hallazgos" class="hallazgos">
+					<thead>
+					<tr><th>Regla</th><th>Tipo · severidad</th><th>Ubicación</th><th>Mensaje de Sonar (G1)</th>
+						<th>Veredicto IA (G2<span th:if="${actual}" th:text="' · ' + ${actual.modelo}"></span>)</th>
+						<th th:if="${coinciden}" title="¿Todas las corridas dan el mismo veredicto?">Coinciden</th></tr>
+					</thead>
+					<tbody>
+					<tr th:each="h : ${hallazgos}" th:with="r=${recs[h.id]}, c=${coinciden != null ? coinciden[h.id] : null}"
+						th:data-href="@{/hallazgos/{id}(id=${h.id},corrida=${actual?.clave})}"
+						th:data-veredicto="${r != null ? r.veredicto.name() : 'PENDIENTE'}" th:data-tipo="${h.tipo}"
+						th:data-coinciden="${c == false ? 'no' : 'si'}">
+						<td><a class="regla" th:href="@{/hallazgos/{id}(id=${h.id},corrida=${actual?.clave})}" th:text="${h.regla}">java:S1</a></td>
+						<td><div class="ficha-hallazgo"><div class="chips" th:insert="~{fragmentos :: chips(${h})}"></div></div></td>
+						<td class="origen" th:title="${h.archivo} + ':' + ${h.lineaInicio}"
+							th:with="corte=${h.archivo.lastIndexOf('/') + 1}">
+							<span class="archivo-nombre" th:text="${h.archivo.substring(corte)} + ':' + ${h.lineaInicio}">A.java:1</span>
+							<span class="secundaria ruta truncada" th:text="${h.archivo.substring(0, corte)}">src/</span></td>
+						<td class="celda-mensaje" th:text="${h.mensaje}">mensaje</td>
+						<td>
+							<span th:if="${r}" class="badge" th:classappend="${r.veredicto.name()}" th:text="${r.veredicto.etiqueta}">VP</span>
+							<span th:if="${r}" class="secundaria" th:text="'confianza ' + ${#numbers.formatDecimal(r.confianza, 1, 2, 'COMMA')}">0,9</span>
+							<span th:unless="${r}" class="badge PENDIENTE">Sin interpretar</span>
+						</td>
+						<td th:if="${coinciden}">
+							<span th:if="${c == null}" class="ayuda">—</span>
+							<span th:if="${c == true}" class="si" title="Mismo veredicto en todas las corridas"><svg class="icono s"><use href="/iconos.svg#check"/></svg></span>
+							<span th:if="${c == false}" class="badge discrepancia">Discrepan</span>
+						</td>
+					</tr>
+					</tbody>
+				</table>
+				<p class="sin-coincidencias" id="tabla-hallazgos-vacio" hidden>Ningún hallazgo coincide con el filtro.</p>
+			</div>
+		</th:block>
 	</section>
 </main>
 </body>
