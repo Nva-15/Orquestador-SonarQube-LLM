@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="es">
+<head th:replace="~{fragmentos :: head('Pregunta ' + ${posicion} + '/' + ${total}, false)}"></head>
+<body>
+<header th:replace="~{fragmentos :: menu('likert')}"></header>
+<main class="ancho">
+	<div class="navegacion">
+		<span>
+			<a th:href="@{/likert}">← Cuestionarios</a>
+			<a th:if="${anterior}" th:href="@{/likert/{c}/{i}(c=${c.id},i=${anterior})}">‹ Anterior</a>
+		</span>
+		<span class="ayuda">Participante <strong th:text="${codigo}">P1</strong> · pregunta
+			<span th:text="${posicion}">1</span> de <span th:text="${total}">1</span></span>
+	</div>
+	<div class="barra"><div th:style="'width:' + ${hechas * 100 / total} + '%'"></div></div>
+	<div class="alerta" th:if="${error}" th:text="${error}"></div>
+
+	<div class="comparacion etiquetado">
+		<section class="tarjeta">
+			<p class="grupo">Hallazgo</p>
+			<h1 th:text="${h.regla}">java:S1</h1>
+			<dl class="datos">
+				<dt>Archivo</dt><dd><span th:text="${h.archivo}">archivo</span>:<span th:text="${h.lineaInicio}">1</span></dd>
+				<dt>Mensaje</dt><dd th:text="${h.mensaje}">mensaje</dd>
+			</dl>
+			<div class="codigo" th:unless="${#lists.isEmpty(h.lineas())}" style="margin-top: 12px">
+				<div th:each="l : ${h.lineas()}" class="linea" th:classappend="${l.marcada} ? 'marcada'"><span
+						class="num" th:text="${l.numero}">1</span><span class="txt" th:text="${l.texto}">código</span></div>
+			</div>
+		</section>
+
+		<section class="tarjeta recomendacion-neutra">
+			<p class="grupo">Recomendación</p>
+			<p class="texto" th:text="${asignado.texto}">texto</p>
+			<div th:if="${!#strings.isEmpty(asignado.codigo)}">
+				<p class="grupo">Código propuesto</p>
+				<pre class="codigo propuesta" th:text="${asignado.codigo}">código</pre>
+			</div>
+		</section>
+	</div>
+
+	<section class="tarjeta">
+		<form method="post" th:action="@{/likert/{c}/{i}(c=${c.id},i=${asignado.item.id})}">
+			<table class="likert">
+				<thead>
+				<tr><th></th><th>1<br><small>Muy en desacuerdo</small></th><th>2</th><th>3<br><small>Neutral</small></th><th>4</th>
+					<th>5<br><small>Muy de acuerdo</small></th></tr>
+				</thead>
+				<tbody>
+				<tr th:each="p : ${preguntas}">
+					<td><strong th:text="${p.dimension}">Claridad</strong><br><span th:text="${p.afirmacion}">afirmación</span></td>
+					<td th:each="v : ${#numbers.sequence(1, 5)}">
+						<label class="punto"><input type="radio" th:name="${p.campo}" th:value="${v}" required
+								th:checked="${respuesta != null and respuesta[p.campo] == v}"
+								th:attr="aria-label=${p.dimension} + ' ' + ${v}"></label>
+					</td>
+				</tr>
+				</tbody>
+			</table>
+			<label class="obs">Comentario <small>(opcional)</small>
+				<textarea name="comentario" rows="3" th:text="${respuesta?.comentario}"></textarea>
+			</label>
+			<button type="submit">Guardar y siguiente</button>
+		</form>
+	</section>
+</main>
+</body>
+</html>

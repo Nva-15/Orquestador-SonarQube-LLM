@@ -1,0 +1,16 @@
+{
+  "type": "object",
+  "properties": {
+    "veredicto": {
+      "type": "string",
+      "enum": ["VERDADERO_POSITIVO", "FALSO_POSITIVO", "REQUIERE_REVISION_HUMANA"]
+    },
+    "confianza": { "type": "number", "minimum": 0, "maximum": 1 },
+    "justificacion": { "type": "string" },
+    "explicacion": { "type": "string" },
+    "recomendacion": { "type": "string" },
+    "codigoCorregido": { "type": "string" }
+  },
+  "required": ["veredicto", "confianza", "justificacion", "explicacion", "recomendacion", "codigoCorregido"],
+  "additionalProperties": false
+}

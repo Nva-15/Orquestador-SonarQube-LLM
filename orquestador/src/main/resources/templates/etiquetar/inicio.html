@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="es">
+<head th:replace="~{fragmentos :: head('Etiquetar', false)}"></head>
+<body>
+<header th:replace="~{fragmentos :: menu('etiquetar')}"></header>
+<main>
+	<section class="tarjeta">
+		<h1>Etiquetar hallazgos (ciego)</h1>
+		<p class="ayuda">Decide para cada hallazgo de SonarQube si es un <strong>problema real (VP)</strong> o un
+			<strong>falso positivo (FP)</strong>. Estas etiquetas son la verdad de referencia de la tesis.
+			Para no sesgarte, aquí no se muestra la opinión de la IA ni la de otros evaluadores, y cada evaluador
+			ve los hallazgos en un orden aleatorio distinto.</p>
+		<p class="ayuda"><strong>Importante:</strong> no abras la pantalla «2. Resultados» hasta terminar de etiquetar.</p>
+
+		<div class="aviso" th:if="${aviso}" th:text="${aviso}"></div>
+		<div class="alerta" th:if="${error}" th:text="${error}"></div>
+
+		<form method="post" th:action="@{/etiquetar/evaluador}" class="en-linea">
+			<label>Tu código de evaluador
+				<input name="codigo" required maxlength="40" th:value="${evaluador}" placeholder="E1, E2… o tu nombre">
+			</label>
+			<button type="submit" th:text="${evaluador} ? 'Cambiar' : 'Empezar'">Empezar</button>
+		</form>
+		<p th:if="${evaluador}" class="ayuda">Etiquetando como <strong th:text="${evaluador}">E1</strong>.</p>
+	</section>
+
+	<section class="tarjeta" th:if="${evaluador}">
+		<h2>Análisis disponibles</h2>
+		<p th:if="${#lists.isEmpty(analisis)}" class="ayuda">No hay análisis con hallazgos.</p>
+		<table th:unless="${#lists.isEmpty(analisis)}">
+			<thead><tr><th>Proyecto</th><th>Tu progreso</th><th></th><th>Ficha de registro</th></tr></thead>
+			<tbody>
+			<tr th:each="a : ${analisis}" th:with="n=${hechas[a.id]}">
+				<td th:text="${a.projectKey}">clave</td>
+				<td style="min-width: 220px">
+					<div class="barra"><div th:style="'width:' + ${n * 100 / a.totalHallazgos} + '%'"></div></div>
+					<small th:text="${n} + ' de ' + ${a.totalHallazgos} + ' etiquetados'">0 de 0</small>
+				</td>
+				<td><a th:href="@{/etiquetar/{id}(id=${a.id})}"
+					   th:text="${n == 0} ? 'Empezar' : (${n < a.totalHallazgos} ? 'Continuar' : 'Revisar')">Empezar</a></td>
+				<td><a th:href="@{/etiquetar/{id}/ficha.csv(id=${a.id})}">Descargar CSV</a>
+					<small class="ayuda">(todos los evaluadores)</small></td>
+			</tr>
+			</tbody>
+		</table>
+	</section>
+</main>
+</body>
+</html>

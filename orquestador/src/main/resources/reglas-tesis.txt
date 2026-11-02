@@ -1,0 +1,51 @@
+# Subconjunto de reglas de la tesis (OE1). Una clave por línea; "#" = comentario.
+# El perfil "Tesis Java" se crea en SonarQube con exactamente estas reglas.
+# Criterio: reglas de Sonar way con impacto en fiabilidad, seguridad o mantenibilidad
+# cuya pertinencia depende del contexto (donde el LLM puede aportar), más reglas
+# deterministas de control para comparar.
+
+# --- Fiabilidad (bugs) ---
+java:S2259    # Desreferencia de null
+java:S2095    # Recursos que no se cierran
+java:S1206    # equals sin hashCode
+java:S1764    # Operandos idénticos en ambos lados
+java:S2583    # Condición siempre verdadera/falsa
+java:S2589    # Expresión booleana gratuita
+java:S1871    # Ramas con el mismo código
+java:S2119    # Random creado en cada uso
+java:S2184    # Desbordamiento en operación aritmética antes del cast
+java:S2142    # InterruptedException ignorada
+java:S4973    # Comparación de String/boxed con ==
+java:S2201    # Valor de retorno ignorado
+java:S3655    # Optional.get() sin comprobar
+
+# --- Seguridad (vulnerabilidades / hotspots) ---
+java:S2077    # SQL construido con formato/concatenación
+java:S2068    # Contraseñas en el código
+java:S6437    # Credenciales filtradas
+java:S2245    # Generador pseudoaleatorio inseguro
+java:S4790    # Hash débil
+java:S5547    # Algoritmo de cifrado débil
+java:S5542    # Modo de cifrado inseguro
+java:S4423    # Protocolo SSL/TLS débil
+java:S2755    # XXE en parsers XML
+java:S4507    # Funciones de depuración activas
+java:S2092    # Cookie sin flag secure
+
+# --- Mantenibilidad (code smells) ---
+java:S1854    # Asignación inútil (dead store)
+java:S1172    # Parámetro sin usar
+java:S1481    # Variable local sin usar
+java:S1068    # Campo privado sin usar
+java:S1144    # Método privado sin usar
+java:S3776    # Complejidad cognitiva
+java:S1192    # Literales String duplicados
+java:S108     # Bloque vacío
+java:S1186    # Método vacío
+java:S106     # System.out en lugar de logger
+java:S112     # Excepción genérica lanzada
+java:S2139    # Log y relanzar excepción
+java:S1118    # Clase utilitaria con constructor público
+java:S125     # Código comentado
+java:S1066    # if anidados fusionables
+java:S3358    # Ternarios anidados

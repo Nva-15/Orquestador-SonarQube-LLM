@@ -1,0 +1,10 @@
+target/
+build/
+repositorios/*
+!repositorios/README.md
+*.log
+.idea/
+.vscode/
+.env
+orquestador/data/
+orquestador/data-respaldo-*/

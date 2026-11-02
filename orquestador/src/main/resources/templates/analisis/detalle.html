@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="es">
+<head th:replace="~{fragmentos :: head('Análisis ' + ${a.projectKey}, ${a.estado.enCurso()})}"></head>
+<body>
+<header th:replace="~{fragmentos :: menu('analisis')}"></header>
+<main>
+	<section class="tarjeta">
+		<p><a th:href="@{/analisis}">← Volver</a></p>
+		<h1>Análisis #<span th:text="${a.id}">1</span>: <span th:text="${a.projectKey}">clave</span></h1>
+
+		<ol class="etapas">
+			<li th:each="e : ${etapas}"
+				th:text="${e}"
+				th:classappend="${e == a.estado} ? 'actual' : (${e.ordinal() < a.estado.ordinal() and a.estado.name() != 'ERROR'} ? 'hecha')">
+				ETAPA
+			</li>
+		</ol>
+		<div class="alerta" th:if="${a.estado.name() == 'ERROR'}">El análisis terminó con error; revisa el registro.</div>
+
+		<dl class="datos">
+			<dt>Origen</dt><dd th:text="${a.origen}">ruta</dd>
+			<dt>Estado</dt><dd><span class="estado" th:classappend="${a.estado.name()}" th:text="${a.estado}">ESTADO</span></dd>
+			<dt>Build</dt><dd th:text="${a.tipoBuild} ?: '—'">maven</dd>
+			<dt>Perfil de reglas</dt><dd th:text="${a.perfilReglas} ?: '—'">Tesis Java</dd>
+			<dt>Hallazgos abiertos</dt><dd th:text="${a.totalHallazgos} ?: '—'">0</dd>
+			<dt>Inicio / fin</dt>
+			<dd><span th:text="${#temporals.format(a.creado, 'dd/MM/yyyy HH:mm:ss')}">inicio</span>
+				<span th:if="${a.finalizado}"> → <span th:text="${#temporals.format(a.finalizado, 'HH:mm:ss')}">fin</span></span></dd>
+			<dt>En SonarQube</dt>
+			<dd><a th:href="${sonarUrl} + '/dashboard?id=' + ${a.projectKey}" target="_blank">Abrir el proyecto ↗</a></dd>
+		</dl>
+	</section>
+
+	<section class="tarjeta">
+		<h2>Registro</h2>
+		<pre class="log" th:text="${a.log}">log</pre>
+	</section>
+</main>
+</body>
+</html>

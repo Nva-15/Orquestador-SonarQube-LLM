@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="es">
+<head th:replace="~{fragmentos :: head('Nuevo análisis', false)}"></head>
+<body>
+<header th:replace="~{fragmentos :: menu('analisis')}"></header>
+<main>
+	<section class="tarjeta">
+		<h1>Nuevo análisis</h1>
+		<p class="ayuda">Indica la ruta de un repositorio Java en este equipo o su URL git. El orquestador trabaja
+			sobre una copia en <code>repositorios/</code>, la compila en Docker si es Maven o Gradle y la analiza
+			en SonarQube con el perfil <strong th:text="${perfil}">Tesis Java</strong>.</p>
+
+		<div class="alerta" th:unless="${tokenDefinido}">
+			Falta la variable de entorno <code>SONAR_TOKEN</code>. Defínela y reinicia el orquestador para poder
+			analizar.
+		</div>
+		<div class="alerta" th:if="${error}" th:text="${error}"></div>
+
+		<form method="post" th:action="@{/analisis}" class="formulario">
+			<label>Ruta o URL del repositorio
+				<input name="origen" required th:value="${origen}"
+					   placeholder="D:\repos\mi-proyecto   o   https://github.com/usuario/repo.git">
+			</label>
+			<label>Clave del proyecto en Sonar <small>(opcional; por defecto, el nombre de la carpeta)</small>
+				<input name="clave" placeholder="mi-proyecto">
+			</label>
+			<button type="submit" th:disabled="${!tokenDefinido}">Analizar</button>
+		</form>
+	</section>
+
+	<section class="tarjeta">
+		<h2>Análisis realizados</h2>
+		<p th:if="${#lists.isEmpty(analisis)}" class="ayuda">Todavía no hay análisis.</p>
+		<table th:unless="${#lists.isEmpty(analisis)}">
+			<thead>
+			<tr><th>#</th><th>Proyecto</th><th>Origen</th><th>Build</th><th>Estado</th><th>Hallazgos</th><th>Fecha</th></tr>
+			</thead>
+			<tbody>
+			<tr th:each="a : ${analisis}">
+				<td><a th:href="@{/analisis/{id}(id=${a.id})}" th:text="${a.id}">1</a></td>
+				<td th:text="${a.projectKey}">clave</td>
+				<td class="origen" th:text="${a.origen}">ruta</td>
+				<td th:text="${a.tipoBuild} ?: '—'">maven</td>
+				<td><span class="estado" th:classappend="${a.estado.name()}" th:text="${a.estado}">ESTADO</span></td>
+				<td th:text="${a.totalHallazgos} ?: '—'">0</td>
+				<td th:text="${#temporals.format(a.creado, 'dd/MM/yyyy HH:mm')}">fecha</td>
+			</tr>
+			</tbody>
+		</table>
+	</section>
+</main>
+</body>
+</html>

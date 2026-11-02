@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="es">
+<head th:fragment="head(titulo, refrescar)">
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta th:if="${refrescar}" http-equiv="refresh" content="3">
+	<title th:text="${titulo} + ' · Orquestador'">Orquestador</title>
+	<link rel="stylesheet" th:href="@{/estilos.css}">
+</head>
+<body>
+<header th:fragment="menu(activo)" class="cabecera">
+	<div class="marca">
+		<strong>Orquestador</strong>
+		<span>SonarQube + LLM · Revisión de código Java</span>
+	</div>
+	<nav>
+		<a th:href="@{/analisis}" th:classappend="${activo == 'analisis'} ? 'activo'">1. Nuevo análisis</a>
+		<a th:href="@{/resultados}" th:classappend="${activo == 'resultados'} ? 'activo'">2. Resultados G1 vs G2</a>
+		<a th:href="@{/etiquetar}" th:classappend="${activo == 'etiquetar'} ? 'activo'">3. Etiquetar</a>
+		<a th:href="@{/likert}" th:classappend="${activo == 'likert'} ? 'activo'">4. Likert</a>
+		<a th:href="@{/metricas}" th:classappend="${activo == 'metricas'} ? 'activo'">5. Métricas</a>
+	</nav>
+</header>
+</body>
+</html>

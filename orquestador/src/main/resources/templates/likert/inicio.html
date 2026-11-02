@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="es">
+<head th:replace="~{fragmentos :: head('Cuestionario', false)}"></head>
+<body>
+<header th:replace="~{fragmentos :: menu('likert')}"></header>
+<main>
+	<section class="tarjeta">
+		<h1>Cuestionario de utilidad percibida</h1>
+		<p class="ayuda">Verás hallazgos de análisis de código Java junto a una recomendación para resolverlos.
+			Valora cada recomendación del 1 (muy en desacuerdo) al 5 (muy de acuerdo) en claridad, pertinencia y
+			accionabilidad. No hay respuestas correctas: nos interesa tu opinión como desarrollador.</p>
+
+		<div class="aviso" th:if="${aviso}" th:text="${aviso}"></div>
+		<div class="alerta" th:if="${error}" th:text="${error}"></div>
+
+		<form method="post" th:action="@{/likert/participante}" class="formulario">
+			<label>Tu código de participante
+				<input name="codigo" required maxlength="40" th:value="${codigo}" placeholder="P1, P2… o tu nombre">
+			</label>
+			<label>Experiencia con Java
+				<select name="experiencia" required>
+					<option value="">Elige…</option>
+					<option th:each="e : ${experiencias}" th:value="${e}" th:text="${e}"
+							th:selected="${participante != null and participante.experiencia == e}">rango</option>
+				</select>
+			</label>
+			<button type="submit" th:text="${participante} ? 'Actualizar' : 'Empezar'">Empezar</button>
+		</form>
+		<p th:if="${participante}" class="ayuda">Respondiendo como <strong th:text="${participante.codigo}">P1</strong>.</p>
+	</section>
+
+	<section class="tarjeta" th:if="${participante}">
+		<h2>Cuestionarios</h2>
+		<p th:if="${#lists.isEmpty(cuestionarios)}" class="ayuda">Todavía no hay cuestionarios.</p>
+		<table th:unless="${#lists.isEmpty(cuestionarios)}">
+			<thead><tr><th>#</th><th>Tu progreso</th><th></th></tr></thead>
+			<tbody>
+			<tr th:each="c : ${cuestionarios}" th:with="n=${hechas[c.id]}, t=${totales[c.id]}">
+				<td th:text="'Cuestionario ' + ${c.id}">1</td>
+				<td style="min-width: 220px">
+					<div class="barra"><div th:style="'width:' + (${t} > 0 ? ${n * 100 / t} : 0) + '%'"></div></div>
+					<small th:text="${n} + ' de ' + ${t} + ' respondidos'">0 de 0</small>
+				</td>
+				<td><a th:href="@{/likert/{id}(id=${c.id})}" th:if="${n < t}"
+					   th:text="${n == 0} ? 'Empezar' : 'Continuar'">Empezar</a>
+					<span th:if="${n >= t}" class="si">✓ Completado</span></td>
+			</tr>
+			</tbody>
+		</table>
+	</section>
+
+	<section class="tarjeta">
+		<details>
+			<summary>Para el investigador: crear cuestionarios y descargar respuestas</summary>
+			<p class="ayuda">Se toma una muestra aleatoria de hallazgos con respuesta en la corrida elegida. Cada
+				participante ve la mitad con la recomendación de SonarQube (G1) y la otra mitad con la del LLM (G2), sin
+				saber cuál es cuál; la asignación cambia entre participantes.</p>
+			<form method="post" th:action="@{/likert/cuestionarios}" class="en-linea" th:unless="${#lists.isEmpty(opciones)}">
+				<label>Análisis y corrida G2
+					<select name="opcion" required>
+						<option th:each="o : ${opciones}" th:value="${o[0]}" th:text="${o[1]}">repo · haiku</option>
+					</select>
+				</label>
+				<label>Hallazgos
+					<input name="tamano" type="number" min="2" max="60" value="10" style="width: 90px">
+				</label>
+				<button type="submit">Crear cuestionario</button>
+			</form>
+			<p th:if="${#lists.isEmpty(opciones)}" class="ayuda">Primero interpreta hallazgos con IA en la pantalla 2.</p>
+			<table th:unless="${#lists.isEmpty(cuestionarios)}">
+				<thead><tr><th>#</th><th>Repositorio</th><th>Corrida G2</th><th>Hallazgos</th><th>Creado</th><th>Respuestas</th></tr></thead>
+				<tbody>
+				<tr th:each="c : ${cuestionarios}">
+					<td th:text="${c.id}">1</td>
+					<td th:text="${analisisPorId[c.analisisId]?.projectKey}">repo</td>
+					<td th:text="${c.etiquetaCorrida}">haiku</td>
+					<td th:text="${totales[c.id]}">0</td>
+					<td th:text="${#temporals.format(c.creado, 'dd/MM/yyyy HH:mm')}">fecha</td>
+					<td><a th:href="@{/likert/{id}/respuestas.csv(id=${c.id})}">CSV</a></td>
+				</tr>
+				</tbody>
+			</table>
+		</details>
+	</section>
+</main>
+</body>
+</html>

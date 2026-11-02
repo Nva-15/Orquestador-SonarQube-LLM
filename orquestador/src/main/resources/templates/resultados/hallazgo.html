@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="es">
+<head th:replace="~{fragmentos :: head(${h.regla} + ' · ' + ${a.projectKey}, false)}"></head>
+<body>
+<header th:replace="~{fragmentos :: menu('resultados')}"></header>
+<main class="ancho">
+	<div class="navegacion">
+		<a th:href="@{/resultados/{id}(id=${a.id},corrida=${actual?.clave})}">← Hallazgos de <span th:text="${a.projectKey}">clave</span></a>
+		<span>
+			<a th:if="${anterior}" th:href="@{/hallazgos/{id}(id=${anterior},corrida=${actual?.clave})}">‹ Anterior</a>
+			<span class="ayuda">Hallazgo <span th:text="${posicion}">1</span> de <span th:text="${total}">1</span></span>
+			<a th:if="${siguiente}" th:href="@{/hallazgos/{id}(id=${siguiente},corrida=${actual?.clave})}">Siguiente ›</a>
+		</span>
+	</div>
+
+	<div class="comparacion">
+		<section class="tarjeta g1">
+			<p class="grupo">G1 · SonarQube aislado</p>
+			<h1><span th:text="${h.regla}">java:S1</span></h1>
+			<p class="ayuda" th:text="${h.reglaNombre}">Nombre de la regla</p>
+			<dl class="datos">
+				<dt>Tipo</dt><dd th:text="${h.tipo}">BUG</dd>
+				<dt>Severidad</dt><dd th:text="${h.severidad}">MAJOR</dd>
+				<dt>Archivo</dt><dd><span th:text="${h.archivo}">archivo</span>
+					<small th:if="${h.esTest}" class="etiqueta-test">test</small></dd>
+				<dt>Líneas</dt><dd><span th:text="${h.lineaInicio} ?: '—'">1</span><span
+						th:if="${h.lineaFin != null and h.lineaFin != h.lineaInicio}" th:text="'–' + ${h.lineaFin}"></span></dd>
+			</dl>
+			<h2>Mensaje</h2>
+			<p class="mensaje" th:text="${h.mensaje}">mensaje</p>
+			<details>
+				<summary>Descripción de la regla</summary>
+				<pre class="texto" th:text="${h.reglaDescripcion}">descripción</pre>
+			</details>
+		</section>
+
+		<section class="tarjeta g2">
+			<p class="grupo">G2 · SonarQube + orquestador + LLM</p>
+			<nav class="pestanas" th:if="${corridas.size() > 1}">
+				<a th:each="e : ${corridas}" th:href="@{/hallazgos/{id}(id=${h.id},corrida=${e.key.clave})}"
+				   th:classappend="${e.key == actual} ? 'activa'">
+					<span th:text="${e.key.etiqueta}">haiku</span>
+					<span class="badge mini" th:classappend="${e.value.veredicto.name()}" th:text="${e.value.veredicto.etiqueta}">VP</span>
+				</a>
+			</nav>
+			<div th:if="${rec}">
+				<h1><span class="badge grande" th:classappend="${rec.veredicto.name()}" th:text="${rec.veredicto.etiqueta}">VP</span></h1>
+				<p class="ayuda">Confianza <strong th:text="${#numbers.formatDecimal(rec.confianza, 1, 2, 'COMMA')}">0,9</strong> ·
+					<span th:text="${rec.modeloReal} ?: ${rec.modelo}">modelo</span> · prompt <span th:text="${rec.versionPrompt}">v1</span> ·
+					<span th:text="${#numbers.formatDecimal(rec.latenciaMs / 1000.0, 1, 1, 'COMMA')}">0</span> s</p>
+				<h2>¿Por qué?</h2>
+				<p class="texto" th:text="${rec.justificacion}">justificación</p>
+				<h2>Qué significa</h2>
+				<p class="texto" th:text="${rec.explicacion}">explicación</p>
+				<h2>Recomendación</h2>
+				<ol class="pasos" th:if="${!#lists.isEmpty(rec.pasosRecomendacion)}">
+					<li th:each="p : ${rec.pasosRecomendacion}" th:text="${p}">paso</li>
+				</ol>
+				<p class="texto" th:if="${#lists.isEmpty(rec.pasosRecomendacion)}" th:text="${rec.recomendacion}">recomendación</p>
+				<div th:if="${!#strings.isEmpty(rec.codigoCorregido)}">
+					<h2>Código corregido propuesto</h2>
+					<pre class="codigo propuesta" th:text="${rec.codigoCorregido}">código</pre>
+				</div>
+			</div>
+			<div th:unless="${rec}">
+				<p class="ayuda">Este hallazgo aún no tiene interpretación del LLM. Usa <strong>Interpretar con IA</strong>
+					en la <a th:href="@{/resultados/{id}(id=${a.id})}">lista de hallazgos</a>.</p>
+				<div class="alerta" th:if="${!#lists.isEmpty(historial)}">
+					Último intento fallido: <span th:text="${historial[0].error}">error</span></div>
+			</div>
+		</section>
+	</div>
+
+	<section class="tarjeta">
+		<h2>Contexto sintáctico enviado al LLM</h2>
+		<p class="ayuda" th:text="${h.contextoDescripcion} ?: 'Sin contexto (no se encontró el archivo)'">método</p>
+		<div class="codigo" th:unless="${#lists.isEmpty(h.lineas())}">
+			<div th:each="l : ${h.lineas()}" class="linea" th:classappend="${l.marcada} ? 'marcada'"><span
+					class="num" th:text="${l.numero}">1</span><span class="txt" th:text="${l.texto}">código</span></div>
+		</div>
+	</section>
+
+	<section class="tarjeta" th:if="${!#lists.isEmpty(historial)}">
+		<details>
+			<summary>Trazabilidad: <span th:text="${#lists.size(historial)}">1</span> llamada(s) al LLM</summary>
+			<table>
+				<thead><tr><th>Fecha</th><th>Proveedor · modelo</th><th>Prompt</th><th>Veredicto</th><th>Tokens (ent/sal)</th><th>Latencia</th></tr></thead>
+				<tbody>
+				<tr th:each="r : ${historial}">
+					<td th:text="${#temporals.format(r.fecha, 'dd/MM HH:mm:ss')}">fecha</td>
+					<td><span th:text="${r.proveedor}">claude-code</span> · <span th:text="${r.modeloReal} ?: ${r.modelo}">haiku</span></td>
+					<td th:text="${r.versionPrompt}">v1</td>
+					<td th:text="${r.exitosa} ? ${r.veredicto.etiqueta} : 'Error: ' + ${r.error}">VP</td>
+					<td th:text="${r.tokensEntrada} + ' / ' + ${r.tokensSalida}">0</td>
+					<td th:text="${r.latenciaMs} != null ? ${#numbers.formatDecimal(r.latenciaMs / 1000.0, 1, 1, 'COMMA')} + ' s' : '—'">0</td>
+				</tr>
+				</tbody>
+			</table>
+			<h2>Prompt enviado (última llamada)</h2>
+			<pre class="log" th:text="${historial[0].prompt}">prompt</pre>
+		</details>
+	</section>
+</main>
+</body>
+</html>

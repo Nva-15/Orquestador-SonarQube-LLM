@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="es">
+<head th:replace="~{fragmentos :: head('Resultados ' + ${a.projectKey}, ${enCurso})}"></head>
+<body>
+<header th:replace="~{fragmentos :: menu('resultados')}"></header>
+<main>
+	<section class="tarjeta">
+		<p><a th:href="@{/resultados}">← Todos los análisis</a></p>
+		<h1>Resultados: <span th:text="${a.projectKey}">clave</span></h1>
+		<p class="ayuda">Análisis #<span th:text="${a.id}">1</span> ·
+			<span th:text="${a.origen}">origen</span> · perfil <span th:text="${a.perfilReglas}">Tesis Java</span></p>
+
+		<div class="aviso" th:if="${aviso}" th:text="${aviso}"></div>
+		<div class="alerta" th:if="${error}" th:text="${error}"></div>
+
+		<div class="resumen">
+			<div class="bloque g1">
+				<h2>G1 · SonarQube</h2>
+				<p class="cifra" th:text="${#lists.size(hallazgos)}">0</p>
+				<p class="ayuda">hallazgos</p>
+				<ul class="conteo">
+					<li th:each="e : ${porTipo}"><span th:text="${e.key}">BUG</span> <strong th:text="${e.value}">0</strong></li>
+				</ul>
+			</div>
+			<div class="bloque g2">
+				<h2>G2 · SonarQube + LLM</h2>
+				<nav class="pestanas" th:unless="${corridas.isEmpty()}">
+					<a th:each="c : ${corridas}" th:href="@{/resultados/{id}(id=${a.id},corrida=${c.clave})}"
+					   th:classappend="${c == actual} ? 'activa'" th:text="${c.etiqueta}">haiku · prompt v1</a>
+				</nav>
+				<ul class="conteo veredictos">
+					<li><span class="badge VERDADERO_POSITIVO">Problema real</span> <strong th:text="${porVeredicto['VERDADERO_POSITIVO']}">0</strong></li>
+					<li><span class="badge FALSO_POSITIVO">Falso positivo</span> <strong th:text="${porVeredicto['FALSO_POSITIVO']}">0</strong></li>
+					<li><span class="badge REQUIERE_REVISION_HUMANA">Revisión humana</span> <strong th:text="${porVeredicto['REQUIERE_REVISION_HUMANA']}">0</strong></li>
+					<li><span class="badge PENDIENTE">Sin interpretar</span> <strong th:text="${porVeredicto['PENDIENTE']}">0</strong></li>
+				</ul>
+				<p class="ayuda" th:if="${uso.tokensEntrada > 0}">
+					<span th:text="${uso.modelos}">modelo</span> ·
+					<span th:text="${#numbers.formatInteger(uso.tokensEntrada, 1, 'POINT')}">0</span> tokens de entrada,
+					<span th:text="${#numbers.formatInteger(uso.tokensSalida, 1, 'POINT')}">0</span> de salida ·
+					latencia media <span th:text="${#numbers.formatDecimal(uso.latenciaMediaMs / 1000.0, 1, 1, 'COMMA')}">0</span> s ·
+					coste de referencia US$ <span th:text="${#numbers.formatDecimal(uso.costoReferenciaUsd, 1, 4, 'COMMA')}">0</span>
+					<small>(no se cobra con la suscripción)</small>
+				</p>
+				<p th:if="${coinciden}" class="acuerdo">Acuerdo entre corridas:
+					<strong th:text="${enAcuerdo} + ' de ' + ${comparables}">0 de 0</strong> hallazgos con el mismo veredicto</p>
+			</div>
+		</div>
+
+		<div class="acciones">
+			<form method="post" th:action="@{/resultados/{id}/interpretar(id=${a.id})}" class="en-linea">
+				<label>Modelo
+					<select name="modelo" th:disabled="${enCurso}">
+						<option th:each="m : ${modelos}" th:value="${m}" th:text="${m}">haiku</option>
+					</select>
+				</label>
+				<label class="casilla" title="Vuelve a interpretar todos los hallazgos; la corrida anterior queda en el historial">
+					<input type="checkbox" name="repetir" value="true" th:disabled="${enCurso}"> Repetir corrida</label>
+				<button type="submit" th:disabled="${enCurso or #lists.isEmpty(hallazgos)}">Interpretar con IA</button>
+			</form>
+			<form method="post" th:action="@{/resultados/{id}/extraer(id=${a.id})}" class="en-linea"
+				  th:if="${#lists.isEmpty(hallazgos)}">
+				<button type="submit" class="secundario">Extraer hallazgos de Sonar</button>
+			</form>
+		</div>
+
+		<div class="progreso" th:if="${progreso}">
+			<div class="barra"><div th:style="'width:' + ${progreso.porcentaje} + '%'"></div></div>
+			<p class="ayuda">
+				<span th:text="${progreso.hechos}">0</span> de <span th:text="${progreso.total}">0</span> interpretados
+				con <span th:text="${progreso.modelo}">haiku</span>
+				<span th:if="${progreso.errores > 0}"> · <span th:text="${progreso.errores}">0</span> con error</span>
+				<span th:if="${progreso.actual}"> · ahora: <code th:text="${progreso.actual}">regla</code></span>
+				<span th:if="${progreso.mensaje}"> · <strong th:text="${progreso.mensaje}">mensaje</strong></span>
+			</p>
+		</div>
+	</section>
+
+	<section class="tarjeta">
+		<h2>Hallazgos</h2>
+		<p th:if="${#lists.isEmpty(hallazgos)}" class="ayuda">No hay hallazgos extraídos para este análisis.</p>
+		<table th:unless="${#lists.isEmpty(hallazgos)}" class="hallazgos">
+			<thead>
+			<tr><th>Regla</th><th>Tipo · severidad</th><th>Ubicación</th><th>Mensaje de Sonar (G1)</th><th>Veredicto IA (G2<span th:if="${actual}" th:text="' · ' + ${actual.modelo}"></span>)</th>
+				<th th:if="${coinciden}" title="¿Todas las corridas dan el mismo veredicto?">Coinciden</th></tr>
+			</thead>
+			<tbody>
+			<tr th:each="h : ${hallazgos}" th:with="r=${recs[h.id]}">
+				<td><a th:href="@{/hallazgos/{id}(id=${h.id},corrida=${actual?.clave})}" th:text="${h.regla}">java:S1</a></td>
+				<td><span th:text="${h.tipo}">BUG</span><br><small th:text="${h.severidad}">MAJOR</small></td>
+				<td class="origen"><span th:text="${h.archivo}">archivo</span>:<span th:text="${h.lineaInicio}">1</span>
+					<small th:if="${h.esTest}" class="etiqueta-test">test</small></td>
+				<td th:text="${h.mensaje}">mensaje</td>
+				<td>
+					<span th:if="${r}" class="badge" th:classappend="${r.veredicto.name()}" th:text="${r.veredicto.etiqueta}">VP</span>
+					<small th:if="${r}" th:text="${#numbers.formatDecimal(r.confianza, 1, 2, 'COMMA')}">0,9</small>
+					<span th:unless="${r}" class="badge PENDIENTE">Sin interpretar</span>
+				</td>
+				<td th:if="${coinciden}" th:with="c=${coinciden[h.id]}">
+					<span th:if="${c == null}" class="ayuda">—</span>
+					<span th:if="${c == true}" class="si">✓</span>
+					<span th:if="${c == false}" class="badge discrepancia">Discrepan</span>
+				</td>
+			</tr>
+			</tbody>
+		</table>
+	</section>
+</main>
+</body>
+</html>

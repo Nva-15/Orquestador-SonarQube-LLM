@@ -1,0 +1,35 @@
+spring:
+  application:
+    name: orquestador
+  datasource:
+    # Base de datos local de las corridas (carpeta ignorada en git)
+    url: jdbc:h2:file:./data/orquestador;AUTO_SERVER=TRUE
+    username: sa
+    password: ""
+  jpa:
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+
+orquestador:
+  # Copias de trabajo de los repositorios analizados (nunca se compila ni escanea el original)
+  workspace: ../repositorios
+  sonar:
+    url: http://localhost:9000
+    # Cómo ven Sonar los contenedores del scanner (Docker Desktop)
+    url-desde-docker: http://host.docker.internal:9000
+    # Solo por variable de entorno; nunca escribir el token aquí
+    token: ${SONAR_TOKEN:}
+    perfil: Tesis Java
+  docker:
+    imagen-scanner: sonarsource/sonar-scanner-cli:latest
+    imagen-maven: maven:3.9-eclipse-temurin-21
+    imagen-gradle: gradle:8-jdk21
+    # Límite por etapa (clonado, compilación, escaneo)
+    timeout-minutos: 30
+  llm:
+    claude-ejecutable: ${CLAUDE_EJECUTABLE:${APPDATA:}/npm/node_modules/@anthropic-ai/claude-code/bin/claude.exe}
+    modelos: haiku, sonnet
+    timeout-segundos: 180
+    # Carpeta de src/main/resources/prompts con el prompt usado (trazabilidad, OE2)
+    version-prompt: v1

@@ -1,0 +1,18 @@
+HALLAZGO DE SONARQUBE
+- Regla: {{regla}} — {{reglaNombre}}
+- Tipo: {{tipo}} | Severidad: {{severidad}}
+- Mensaje: {{mensaje}}
+- Archivo: {{archivo}}{{esTest}}
+- Líneas señaladas: {{lineas}}
+
+<descripcion_regla>
+{{reglaDescripcion}}
+</descripcion_regla>
+
+CONTEXTO SINTÁCTICO: {{contextoDescripcion}}
+Las líneas señaladas por SonarQube están marcadas con ">>".
+<codigo>
+{{codigo}}
+</codigo>
+
+Valora la pertinencia del hallazgo y responde con el JSON solicitado.

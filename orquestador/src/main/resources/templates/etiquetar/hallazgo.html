@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="es">
+<head th:replace="~{fragmentos :: head('Etiquetar ' + ${posicion} + '/' + ${total}, false)}"></head>
+<body>
+<header th:replace="~{fragmentos :: menu('etiquetar')}"></header>
+<main class="ancho">
+	<div class="navegacion">
+		<a th:href="@{/etiquetar}">← Etiquetar</a>
+		<span class="ayuda"><strong th:text="${a.projectKey}">clave</strong> · evaluador
+			<strong th:text="${evaluador}">E1</strong> · hallazgo <span th:text="${posicion}">1</span> de
+			<span th:text="${total}">1</span> · <span th:text="${hechas.size()}">0</span> etiquetados</span>
+	</div>
+	<div class="barra"><div th:style="'width:' + ${hechas.size() * 100 / total} + '%'"></div></div>
+
+	<div class="aviso" th:if="${aviso}" th:text="${aviso}"></div>
+	<div class="alerta" th:if="${error}" th:text="${error}"></div>
+
+	<div class="comparacion etiquetado">
+		<section class="tarjeta g1">
+			<p class="grupo">Hallazgo de SonarQube</p>
+			<h1 th:text="${h.regla}">java:S1</h1>
+			<p class="ayuda" th:text="${h.reglaNombre}">Nombre de la regla</p>
+			<dl class="datos">
+				<dt>Tipo</dt><dd th:text="${h.tipo}">BUG</dd>
+				<dt>Severidad</dt><dd th:text="${h.severidad}">MAJOR</dd>
+				<dt>Archivo</dt><dd><span th:text="${h.archivo}">archivo</span>
+					<small th:if="${h.esTest}" class="etiqueta-test">test</small></dd>
+				<dt>Línea</dt><dd th:text="${h.lineaInicio} ?: '—'">1</dd>
+			</dl>
+			<h2>Mensaje</h2>
+			<p class="mensaje" th:text="${h.mensaje}">mensaje</p>
+			<details>
+				<summary>Descripción de la regla</summary>
+				<pre class="texto" th:text="${h.reglaDescripcion}">descripción</pre>
+			</details>
+		</section>
+
+		<section class="tarjeta decision">
+			<p class="grupo">Tu valoración</p>
+			<form method="post" th:action="@{/etiquetar/{a}/{h}(a=${a.id},h=${h.id})}">
+				<div class="opciones">
+					<label th:each="c : ${condiciones}" class="opcion" th:classappend="${c.name()}">
+						<input type="radio" name="condicion" th:value="${c.name()}" required
+							   th:checked="${etiqueta != null and etiqueta.condicion == c}">
+						<span th:text="${c.etiqueta}">VP</span>
+					</label>
+				</div>
+				<label class="obs">Observaciones <small>(opcional: por qué, o si dudas)</small>
+					<textarea name="observaciones" rows="4" th:text="${etiqueta?.observaciones}"></textarea>
+				</label>
+				<button type="submit">Guardar y siguiente</button>
+				<p class="ayuda" th:if="${etiqueta}">Ya lo etiquetaste el
+					<span th:text="${#temporals.format(etiqueta.fecha, 'dd/MM HH:mm')}">fecha</span>; puedes cambiarlo.</p>
+			</form>
+		</section>
+	</div>
+
+	<section class="tarjeta">
+		<h2>Código</h2>
+		<p class="ayuda" th:text="${h.contextoDescripcion} ?: 'Sin contexto'">método</p>
+		<div class="codigo" th:unless="${#lists.isEmpty(h.lineas())}">
+			<div th:each="l : ${h.lineas()}" class="linea" th:classappend="${l.marcada} ? 'marcada'"><span
+					class="num" th:text="${l.numero}">1</span><span class="txt" th:text="${l.texto}">código</span></div>
+		</div>
+		<details th:unless="${#lists.isEmpty(archivo)}">
+			<summary>Ver el archivo completo (<span th:text="${#lists.size(archivo)}">0</span> líneas)</summary>
+			<div class="codigo archivo">
+				<div th:each="l : ${archivo}" class="linea" th:classappend="${l.marcada} ? 'marcada'"><span
+						class="num" th:text="${l.numero}">1</span><span class="txt" th:text="${l.texto}">código</span></div>
+			</div>
+		</details>
+	</section>
+
+	<section class="tarjeta">
+		<details>
+			<summary>Todos los hallazgos (en tu orden)</summary>
+			<ol class="lista-orden">
+				<li th:each="x : ${orden}" th:classappend="${x.id == h.id} ? 'actual'">
+					<a th:href="@{/etiquetar/{a}/{h}(a=${a.id},h=${x.id})}">
+						<span th:text="${x.regla}">regla</span> · <span th:text="${x.archivo}">archivo</span>:<span th:text="${x.lineaInicio}">1</span>
+					</a>
+					<span th:if="${hechas[x.id]}" class="si">✓</span>
+				</li>
+			</ol>
+		</details>
+	</section>
+</main>
+</body>
+</html>

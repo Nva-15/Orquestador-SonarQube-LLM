@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="es">
+<head th:replace="~{fragmentos :: head('Resultados', false)}"></head>
+<body>
+<header th:replace="~{fragmentos :: menu('resultados')}"></header>
+<main>
+	<section class="tarjeta">
+		<h1>Resultados G1 vs G2</h1>
+		<p class="ayuda">Elige un análisis para ver sus hallazgos: lo que reporta SonarQube (G1) y la interpretación
+			y recomendación del LLM (G2).</p>
+		<p th:if="${#lists.isEmpty(analisis)}" class="ayuda">No hay análisis completados.
+			<a th:href="@{/analisis}">Lanza uno</a>.</p>
+		<table th:unless="${#lists.isEmpty(analisis)}">
+			<thead>
+			<tr><th>#</th><th>Proyecto</th><th>Origen</th><th>Hallazgos</th><th>Fecha</th></tr>
+			</thead>
+			<tbody>
+			<tr th:each="a : ${analisis}">
+				<td th:text="${a.id}">1</td>
+				<td><a th:href="@{/resultados/{id}(id=${a.id})}" th:text="${a.projectKey}">clave</a></td>
+				<td class="origen" th:text="${a.origen}">ruta</td>
+				<td th:text="${a.totalHallazgos} ?: '—'">0</td>
+				<td th:text="${#temporals.format(a.creado, 'dd/MM/yyyy HH:mm')}">fecha</td>
+			</tr>
+			</tbody>
+		</table>
+	</section>
+</main>
+</body>
+</html>
